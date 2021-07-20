@@ -418,5 +418,105 @@ class ReflowState {
         return result;
     }
 
-    
+
+    // def endPara(this, line):
+    //     // """'line' ends a paragraph and should itthis be emitted.
+    //     // line may be None to indicate EOF or other exception."""
+    //     logDiag('endPara line', this.lineNumber, ': emitting paragraph')
+
+    //     // Emit current paragraph, this line, and reset tracker
+    //     this.emitPara()
+
+    //     if line:
+    //         this.printLines( [ line ] )
+
+    // def endParaContinue(this, line):
+    //     // """'line' ends a paragraph (unless there's already a paragraph being
+    //     // accumulated, e.g. len(para) > 0 - currently not implemented)"""
+    //     this.endPara(line)
+
+    // def endBlock(this, line, reflow = False, vuBlock = False):
+    //     // """'line' begins or ends a block.
+
+    //     // If beginning a block, tag whether or not to reflow the contents.
+
+    //     // vuBlock is True if the previous line indicates this is a Valid Usage block."""
+    //     this.endPara(line)
+
+    //     if this.blockStack[-1] == line:
+    //         logDiag('endBlock line', this.lineNumber,
+    //                 ': popping block end depth:', len(this.blockStack),
+    //                 ':', line, end='')
+
+    //         // Reset apiName at the end of an open block.
+    //         // Open blocks cannot be nested, so this is safe.
+    //         if this.isOpenBlockDelimiter(line):
+    //             logDiag('reset apiName to empty at line', this.lineNumber)
+    //             this.apiName = ''
+    //         else:
+    //             logDiag('NOT resetting apiName to empty at line', this.lineNumber)
+
+    //         this.blockStack.pop()
+    //         this.reflowStack.pop()
+    //         this.vuStack.pop()
+    //     else:
+    //         // Start a block
+    //         this.blockStack.append(line)
+    //         this.reflowStack.append(reflow)
+    //         this.vuStack.append(vuBlock)
+
+    //         logDiag('endBlock reflow =', reflow, ' line', this.lineNumber,
+    //                 ': pushing block start depth', len(this.blockStack),
+    //                 ':', line, end='')
+
+    // def endParaBlockReflow(this, line, vuBlock):
+    //     // """'line' begins or ends a block. The paragraphs in the block *should* be
+    //     // reformatted (e.g. a NOTE)."""
+    //     this.endBlock(line, reflow = True, vuBlock = vuBlock)
+
+    // def endParaBlockPassthrough(this, line):
+    //     // """'line' begins or ends a block. The paragraphs in the block should
+    //     // *not* be reformatted (e.g. a code listing)."""
+    //     this.endBlock(line, reflow = False)
+
+    // def addLine(this, line):
+    //     // """'line' starts or continues a paragraph.
+
+    //     // Paragraphs may have "hanging indent", e.g.
+
+    //     // ```
+    //     //   * Bullet point...
+    //     //     ... continued
+    //     // ```
+
+    //     // In this case, when the higher indentation level ends, so does the
+    //     // paragraph."""
+    //     logDiag('addLine line', this.lineNumber, ':', line, end='')
+
+    //     // See https://stackoverflow.com/questions/13648813/what-is-the-pythonic-way-to-count-the-leading-spaces-in-a-string
+    //     indent = len(line) - len(line.lstrip())
+
+    //     // A hanging paragraph ends due to a less-indented line.
+    //     if this.para != [] and indent < this.hangIndent:
+    //         logDiag('addLine: line reduces indentation, emit paragraph')
+    //         this.emitPara()
+
+    //     // A bullet point (or something that looks like one) always ends the
+    //     // current paragraph.
+    //     if beginBullet.match(line):
+    //         logDiag('addLine: line matches beginBullet, emit paragraph')
+    //         this.emitPara()
+
+    //     if this.para == []:
+    //         // Begin a new paragraph
+    //         this.para = [ line ]
+    //         this.leadIndent = indent
+    //         this.hangIndent = indent
+    //     else:
+    //         // Add a line to a paragraph. Increase the hanging indentation
+    //         // level - once.
+    //         if this.hangIndent == this.leadIndent:
+    //             this.hangIndent = indent
+    //         this.para.append(line)
+
 }
