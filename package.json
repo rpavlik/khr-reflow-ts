@@ -1,0 +1,22 @@
+{
+  "name": "khr-reflow-ts",
+  "version": "1.0.0",
+  "description": "Reflow AsciiDoctor sources according to Khronos spec conventions.",
+  "main": "src/cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ryan Pavlik",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/jest": "^26.0.24",
+    "@types/node": "^16.3.3",
+    "@typescript-eslint/eslint-plugin": "^4.28.4",
+    "@typescript-eslint/parser": "^4.28.4",
+    "eslint": "^7.31.0",
+    "jest": "^27.0.6",
+    "ts-jest": "^27.0.3",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.3.5"
+  }
+}
