@@ -1,4 +1,5 @@
 import { Logger } from "tslog";
+import { isNullOrUndefined } from "util";
 
 const log: Logger = new Logger({ name: "ReflowState" });
 
@@ -20,7 +21,7 @@ const Regexes = {
     // conventions. Nominally it should use the file suffix defined by the API
     // conventions (conventions.file_suffix), except that XR uses '.txt' for
     // generated API include files, not '.adoc' like its other includes.
-    includePat: /include::(?P<directory_traverse>((..\/){1,4}|\{INCS-VAR\}\/|\{generated\}\/)(generated\/)?)(?P<generated_type>[\w]+)\/(?P<category>\w+)\/(?P<entity_name>[^./]+).txt[\[][\]]/,
+    includePat: /include::(?<directory_traverse>((..\/){1,4}|\{INCS-VAR\}\/|\{generated\}\/)(generated\/)?)(?<generated_type>[\w]+)\/(?<category>\w+)\/(?<entity_name>[^./]+).txt[\[][\]]/,
 
     // Find the first pname: pattern in a Valid Usage statement
     pnamePat: /pname:(?P<param>\w+)/,
@@ -66,6 +67,14 @@ const Regexes = {
 
     // An abbreviation, which doesn't (usually) end a line.
     endAbbrev: /(e\.g|i\.e|c\.f)\.$/i,
+
+    // Explicit Valid Usage list item with one or more leading asterisks
+    // The dotAll (s) is needed to prevent vuPat.exec() from stripping
+    // the trailing newline.
+    vuPat: /^(?<head>  [*]+)( *)(?<tail>.*)/s,
+
+    // Pattern matching leading nested bullet points
+    nestedVuPat: /^  \*\*/,
 };
 
 // Fake block delimiters for "common" VU statements
@@ -81,78 +90,92 @@ function truthyString(s: string | null) {
 
 }
 
+// Returns whether oldname and newname match, up to an API suffix.
+function apiMatch(oldname: string, newname: string): boolean {
+    let trailingUpper = /[A-Z]+$/;
+    return oldname.replace(trailingUpper, '') === newname.replace(trailingUpper, '');
+}
+
+class ReflowOptions {
+    // margin to reflow text to.
+    margin: number = 76;
+
+    // true if justification should break to a new line after the end of a sentence.
+    breakPeriod: boolean = true;
+
+    // true if text should be reflowed, false to pass through unchanged.
+    reflow: boolean = true;
+
+    // Integer to start tagging un-numbered Valid Usage statements with,
+    // or null if no tagging should be done.
+    nextvu: number | null = null;
+};
+
 class ReflowState {
     // The last element is a line with the asciidoc block delimiter that's currently in effect,
     // such as '--', '----', '****', '======', or '+++++++++'.
     // This affects whether or not the block contents should be formatted.
-    blockStack: BlockStackElement[] = [null];
+    private blockStack: BlockStackElement[] = [null];
 
     // The last element is true or false if the current blockStack contents
     // should be reflowed.
-    reflowStack: boolean[] = [true];
+    private reflowStack: boolean[] = [true];
+
     // the last element is true or false if the current blockStack contents
     // are an explicit Valid Usage block.
-    vuStack: boolean[] = [false];
+    private vuStack: boolean[] = [false];
 
     // list of lines in the paragraph being accumulated.
     // When this is non-empty, there is a current paragraph.
-    para: string[] = [];
+    private para: string[] = [];
 
     // true if the previous line was a document title line
     // (e.g. :leveloffset: 0 - no attempt to track changes to this is made).
     lastTitle: boolean = false;
 
     // indent level (in spaces) of the first line of a paragraph.
-    leadIndent = 0;
+    private leadIndent = 0;
 
     // indent level of the remaining lines of a paragraph.
-    hangIndent = 0;
+    private hangIndent = 0;
 
     // line number being read from the input file.
     lineNumber = 0;
 
     // true if justification should break to a new line after
     // something that appears to be an initial in someone's name. **TBD**
-    breakInitial = true;
+    breakInitial: boolean = true;
 
     // Prefix of generated Valid Usage tags
-    vuPrefix: string = 'VUID';
+    private vuPrefix: string = 'VUID';
 
-    // Format string for generating Valid Usage tags.
-    // First argument is vuPrefix, second is command/struct name, third is parameter name, fourth is the tag number.
-    vuFormat: string = '{0}-{1}-{2}-{3:0>5d}';
 
     // margin to reflow text to.
-    margin = 76;
+    margin: number = 76;
 
     // true if justification should break to a new line after the end of a sentence.
-    breakPeriod = true;
+    breakPeriod: boolean = true;
 
     // true if text should be reflowed, false to pass through unchanged.
-    reflow = true;
+    reflow: boolean = true;
 
     // Integer to start tagging un-numbered Valid Usage statements with,
     // or null if no tagging should be done.
-    nextvu = null;
+    nextvu: number | null = null;
 
     // String name of a Vulkan structure or command for VUID tag generation,
     // or null if one hasn't been included in this file yet.
-    apiName: string = '';
+    private apiName: string | null = null;
 
+    private emittedText: string[] = [];
 
-    constructor(
-        margin = 76,
-        breakPeriod = true,
-        reflow = true,
-        nextvu = null) {
-
-        this.margin = margin;
-
-        this.breakPeriod = breakPeriod;
-
-        this.reflow = reflow;
-
-        this.nextvu = nextvu;
+    constructor(options: ReflowOptions | null) {
+        if (options !== null) {
+            this.margin = options.margin;
+            this.breakPeriod = options.breakPeriod;
+            this.reflow = options.reflow;
+            this.nextvu = options.nextvu;
+        }
 
     }
 
@@ -162,18 +185,18 @@ class ReflowState {
     //
     //  - A single letter (if breakInitial is true)
     //  - Abbreviations: 'c.f.', 'e.g.', 'i.e.' (or mixed-case versions)
-    endSentence(word: string) {
-        return !(word.slice(-1) !== "." || Regexes.endAbbrev.exec(word) || (this.breakInitial && Regexes.endInitial.exec(word)));
+    private endSentence(word: string) {
+        return !(word.slice(-1) !== "." || Regexes.endAbbrev.test(word) || (this.breakInitial && Regexes.endInitial.test(word)));
     }
 
     // Return true if word is a Valid Usage ID Tag anchor.
-    vuidAnchor(word: string) {
+    private vuidAnchor(word: string) {
 
         return (word.slice(0, 7) == '[[VUID-');
     }
 
     // Returns True if line is an open block delimiter.
-    isOpenBlockDelimiter(line: string): boolean {
+    private isOpenBlockDelimiter(line: string): boolean {
         return line.slice(0, 2) === '--';
     }
 
@@ -186,7 +209,7 @@ class ReflowState {
 
     // Just return the paragraph unchanged if the -noflow argument was
     // given.
-    reflowPara() {
+    private reflowPara() {
         if (!this.reflow) {
             return this.para
         }
@@ -242,7 +265,7 @@ class ReflowState {
                     outLineLen = this.leadIndent + wordLen;
                     // If the paragraph begins with a bullet point, generate
                     // a hanging indent level if there isn't one already.
-                    if (Regexes.beginBullet.exec(this.para[0])) {
+                    if (Regexes.beginBullet.test(this.para[0])) {
 
                         bulletPoint = true;
                         if (this.para.length > 1) {
@@ -347,67 +370,70 @@ class ReflowState {
     // Emit a paragraph, possibly reflowing it depending on the block context.
     //
     // Resets the paragraph accumulator.
-    emitPara() {
+    private emitPara() {
         if (this.para.length > 0) {
-            /// Skipping VU assignment code
-            //         if this.vuStack[-1] and this.nextvu is not None:
-            //             // If:
-            //             //   - this paragraph is in a Valid Usage block,
-            //             //   - VUID tags are being assigned,
-            //             // Try to assign VUIDs
+            let nextvu = this.nextvu;
+            if (this.vuStack[this.vuStack.length - 1] && nextvu !== null) {
+                // If:
+                //   - this paragraph is in a Valid Usage block,
+                //   - VUID tags are being assigned,
+                // Try to assign VUIDs
 
-            //             if nestedVuPat.search(this.para[0]):
-            //                 // Check for nested bullet points. These should not be
-            //                 // assigned VUIDs, nor present at all, because they break
-            //                 // the VU extractor.
-            //                 log.warn(this.filename + ': Invalid nested bullet point in VU block: '+ this.para[0])
-            //             elif this.vuPrefix not in this.para[0]:
-            //                 // If:
-            //                 //   - a tag is not already present, and
-            //                 //   - the paragraph is a properly marked-up list item
-            //                 // Then add a VUID tag starting with the next free ID.
+                if (Regexes.nestedVuPat.test(this.para[0])) {
+                    //                 // Check for nested bullet points. These should not be
+                    //                 // assigned VUIDs, nor present at all, because they break
+                    //                 // the VU extractor.
+                    //                 log.warn(this.filename + ': Invalid nested bullet point in VU block: '+ this.para[0])
+                } else if (this.para[0].search(this.vuPrefix) == -1) {
+                    // If:
+                    //   - a tag is not already present, and
+                    //   - the paragraph is a properly marked-up list item
+                    // Then add a VUID tag starting with the next free ID.
 
-            //                 // Split the first line after the bullet point
-            //                 matches = vuPat.search(this.para[0])
-            //                 if matches is not None:
-            //                     log.info('findRefs: Matched vuPat on line: ' + this.para[0])
-            //                     head = matches.group('head')
-            //                     tail = matches.group('tail')
+                    // Split the first line after the bullet point
+                    let matches = this.para[0].match(Regexes.vuPat);
+                    if (matches !== null && matches.groups !== null && matches.groups !== undefined) {
 
-            //                     // Use the first pname: statement in the paragraph as
-            //                     // the parameter name in the VUID tag. This won't always
-            //                     // be correct, but should be highly reliable.
-            //                     for vuLine in this.para:
-            //                         matches = pnamePat.search(vuLine)
-            //                         if matches is not None:
-            //                             break
+                        log.info('findRefs: Matched vuPat on line: ' + this.para[0]);
+                        let head = matches.groups['head'];
+                        let tail = matches.groups['tail'];
 
-            //                     if matches is not None:
-            //                         paramName = matches.group('param')
-            //                     else:
-            //                         paramName = 'None'
-            //                         log.warn(this.filename + 
-            //                                 ' No param name found for VUID tag on line: ' +
-            //                                 this.para[0])
+                        // Use the first pname: statement in the paragraph as
+                        // the parameter name in the VUID tag. This won't always
+                        // be correct, but should be highly reliable.
+                        let vuLineMatch: RegExpMatchArray | null = null;
+                        for (let vuLine in this.para) {
+                            vuLineMatch = vuLine.match(Regexes.pnamePat);
+                            if (vuLineMatch !== null) {
+                                break;
+                            }
+                        }
+                        let paramName: string = 'None';
+                        if (vuLineMatch !== null && vuLineMatch.groups !== null && vuLineMatch.groups !== undefined) {
+                            paramName = vuLineMatch.groups['param'];
+                        } else {
+                            log.warn(
+                                'No param name found for VUID tag on line: ' +
+                                this.para[0])
+                        }
 
-            //                     newline = (head + ' [[' +
-            //                                this.vuFormat.format(this.vuPrefix,
-            //                                                     this.apiName,
-            //                                                     paramName,
-            //                                                     this.nextvu) + ']] ' + tail)
+                        let paddedNum = nextvu.toString().padStart(5, "0");
+                        let newline = `${head} [[${this.vuPrefix}-${this.apiName}-${paramName}-${paddedNum}]] ${tail}`;
+                        log.info(`Assigning ${this.vuPrefix} ${this.apiName} ${nextvu}  on line: ${this.para[0]} -> ${newline}`);
 
-            //                     log.info('Assigning', this.vuPrefix, this.apiName, this.nextvu,
-            //                             ' on line:', this.para[0], '->', newline, 'END')
+                        this.para[0] = newline;
+                        this.nextvu = nextvu + 1;
 
-            //                     this.para[0] = newline
-            //                     this.nextvu = this.nextvu + 1
-            //             // else:
-            //             //     There are only a few cases of this, and they're all
-            //             //     legitimate. Leave detecting this case to another tool
-            //             //     or hand inspection.
-            //             //     log.warn(this.filename + ': Unexpected non-bullet item in VU block (harmless if following an ifdef):',
-            //             //             this.para[0])
+                    }
+                }
 
+                // else:
+                //     There are only a few cases of this, and they're all
+                //     legitimate. Leave detecting this case to another tool
+                //     or hand inspection.
+                //     log.warn(this.filename + ': Unexpected non-bullet item in VU block (harmless if following an ifdef):',
+                //             this.para[0])
+            }
             if (this.reflowStack[this.reflowStack.length - 1]) {
                 this.printLines(this.reflowPara());
             } else {
@@ -421,44 +447,45 @@ class ReflowState {
         this.hangIndent = 0;
     }
 
-    incrLineNumber() {
+    private incrLineNumber() {
         this.lineNumber += 1;
     }
 
     // Print an array of lines with newlines already present
-    printLines(lines: string[]) {
+    private printLines(lines: string[]) {
         /// TODO
         lines.forEach(line => {
-            if (line.endsWith('\n')) {
-                console.log(line.slice(0, -1));
-            } else {
-                console.log(line);
-            }
+            this.emittedText.push(line);
+            // if (line.endsWith('\n')) {
+            //     console.log(line.slice(0, -1));
+            // } else {
+            //     console.log(line);
+            // }
         });
     }
 
     // 'line' ends a paragraph and should itthis be emitted.
     // line may be null to indicate EOF or other exception.
-    endPara(line: string | null) {
+    private endPara(line: string | null) {
         // def endPara(this, line):
         log.info('endPara line ' + this.lineNumber + ': emitting paragraph')
 
         // Emit current paragraph, this line, and reset tracker
         this.emitPara();
 
-        if (line != null) {
+        if (line !== null) {
             this.printLines([line]);
         }
     }
 
     // 'line' ends a paragraph (unless there's already a paragraph being
     // accumulated, e.g. len(para) > 0 - currently not implemented)
-    endParaContinue(line: string) {
+    private endParaContinue(line: string) {
         this.endPara(line);
     }
 
     // 'line' begins or ends a block.
-    endBlock(line: string, reflow = false, vuBlock = false) {
+    private endBlock(line: string, reflow = false, vuBlock = false) {
         // def endBlock(this, line, reflow = false, vuBlock = false):
 
         // If beginning a block, tag whether or not to reflow the contents.
@@ -495,14 +522,14 @@ class ReflowState {
     }
     // 'line' begins or ends a block. The paragraphs in the block *should* be
     // reformatted (e.g. a NOTE).
-    endParaBlockReflow(line: string, vuBlock: boolean) {
+    private endParaBlockReflow(line: string, vuBlock: boolean) {
         // def endParaBlockReflow(this, line, vuBlock):
         this.endBlock(line, true, vuBlock = vuBlock);
     }
 
     // 'line' begins or ends a block. The paragraphs in the block should
     // *not* be reformatted (e.g. a code listing).
-    endParaBlockPassthrough(line: string) {
+    private endParaBlockPassthrough(line: string) {
         this.endBlock(line, false);
     }
 
@@ -517,7 +544,7 @@ class ReflowState {
     //
     // In this case, when the higher indentation level ends, so does the
     // paragraph.
-    addLine(line: string) {
+    private addLine(line: string) {
         log.info('addLine line ' + this.lineNumber + ': ' + line)
 
         let indent = line.length - line.trimStart().length;
@@ -530,7 +557,7 @@ class ReflowState {
 
         // A bullet point (or something that looks like one) always ends the
         // current paragraph.
-        if (Regexes.beginBullet.exec(line)) {
+        if (Regexes.beginBullet.test(line)) {
             log.info('addLine: line matches beginBullet, emit paragraph')
             this.emitPara();
 
@@ -550,4 +577,118 @@ class ReflowState {
         }
     }
 
+    private processLine(line: string) {
+
+
+    }
+
+    processLines(lines: string[]) {
+        lines.forEach(line => {
+            this.incrLineNumber();
+
+            // Is this a title line (leading '= ' followed by text)?
+            let thisTitle = false;
+
+            // The logic here is broken. If we're in a non-reflowable block and
+            // this line *doesn't* end the block, it should always be
+            // accumulated.
+
+            // Test for a blockCommonReflow delimiter comment first, to avoid
+            // treating it solely as a end-Paragraph marker comment.
+            if (line === blockCommonReflow) {
+                // Starting or ending a pseudo-block for "common" VU statements.
+
+                // Common VU statements use an Asciidoc variable as the apiName,
+                // instead of inferring it from the most recent API include.
+                this.apiName = '{refpage}'
+                this.endParaBlockReflow(line, true);
+            } else if (Regexes.blockReflow.test(line)) {
+
+                // Starting or ending a block whose contents may be reflowed.
+                // Blocks cannot be nested.
+
+                // Is this is an explicit Valid Usage block?
+                let vuBlock = (this.lineNumber > 1 &&
+                    lines[this.lineNumber - 2] === '.Valid Usage\n');
+
+                this.endParaBlockReflow(line, vuBlock);
+            } else if (Regexes.endPara.test(line)) {
+                // Ending a paragraph. Emit the current paragraph, if any, and
+                // prepare to begin a new paragraph.
+
+                this.endPara(line)
+
+                // If this is an include:: line starting the definition of a
+                // structure or command, track that for use in VUID generation.
+
+                let matches = line.match(Regexes.includePat);
+                if (matches !== null && matches.groups != null) {
+
+                    //         if matches is not None:
+                    let generated_type = matches.groups['generated_type'];
+                    let include_type = matches.groups['category'];
+                    if (generated_type === 'api' && (include_type === 'protos' || include_type === 'structs')) {
+                        let apiName = matches.groups['entity_name'];
+                        if (this.apiName !== '' && this.apiName !== null) {
+                            // This happens when there are multiple API include
+                            // lines in a single block. The style guideline is to
+                            // always place the API which others are promoted to
+                            // first. In virtually all cases, the promoted API
+                            // will differ solely in the vendor suffix (or
+                            // absence of it), which is benign.
+                            if (!apiMatch(this.apiName, apiName)) {
+                                log.warn(`Promoted API name mismatch at line ${this.lineNumber}: apiName: ${apiName} does not match this.apiName: ${this.apiName}`);
+                            }
+                        } else {
+                            this.apiName = apiName
+                        }
+                    }
+
+                }
+            } else if (Regexes.endParaContinue.test(line)) {
+                // For now, always just end the paragraph.
+                // Could check see if len(para) > 0 to accumulate.
+
+                this.endParaContinue(line);
+
+                // If it's a title line, track that
+                if (line.slice(0, 2) === '= ') {
+                    thisTitle = true;
+                }
+            } else if (Regexes.blockPassthrough.test(line)) {
+                // Starting or ending a block whose contents must not be reflowed.
+                // These are tables, etc. Blocks cannot be nested.
+
+                this.endParaBlockPassthrough(line);
+            } else if (this.lastTitle) {
+                // The previous line was a document title line. This line
+                // is the author / credits line and must not be reflowed.
+
+                this.endPara(line)
+            } else {
+                // Just accumulate a line to the current paragraph. Watch out for
+                // hanging indents / bullet-points and track that indent level.
+
+                this.addLine(line);
+            }
+            this.lastTitle = thisTitle;
+        });
+
+        // Cleanup at end of file
+        this.endPara(null);
+
+        // Check block nesting
+        if (this.blockStack.length > 1) {
+            log.warn(`mismatched asciidoc block delimiters at EOF: ${this.blockStack[-1]}`);
+        }
+    }
+
+    getEmittedText(): string {
+        return this.emittedText.join('');
+    }
+}
+
+function processLines(lines: string[], options: ReflowOptions | null) {
+    let state = new ReflowState(options);
+    state.processLines(lines);
 }
