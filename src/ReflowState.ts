@@ -30,7 +30,7 @@ const Regexes = {
     includePat: /include::(?<directory_traverse>((..\/){1,4}|\{INCS-VAR\}\/|\{generated\}\/)(generated\/)?)(?<generated_type>[\w]+)\/(?<category>\w+)\/(?<entity_name>[^./]+).txt[\[][\]]/,
 
     // Find the first pname: pattern in a Valid Usage statement
-    pnamePat: /pname:(?P<param>\w+)/,
+    pnamePat: /pname:(?<param>\w+)/,
 
     // Markup that's OK in a contiguous paragraph but otherwise passed through
     //   .anything
