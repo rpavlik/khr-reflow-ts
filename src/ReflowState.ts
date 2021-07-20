@@ -1,5 +1,4 @@
 import { Logger } from "tslog";
-import { isNullOrUndefined } from "util";
 
 const log: Logger = new Logger({ name: "ReflowState" });
 
@@ -96,7 +95,7 @@ function apiMatch(oldname: string, newname: string): boolean {
     return oldname.replace(trailingUpper, '') === newname.replace(trailingUpper, '');
 }
 
-class ReflowOptions {
+export class ReflowOptions {
     // margin to reflow text to.
     margin: number = 76;
 
@@ -109,6 +108,9 @@ class ReflowOptions {
     // Integer to start tagging un-numbered Valid Usage statements with,
     // or null if no tagging should be done.
     nextvu: number | null = null;
+
+    // Line number to start at
+    initialLineNumber: number = 1;
 };
 
 class ReflowState {
@@ -175,6 +177,8 @@ class ReflowState {
             this.breakPeriod = options.breakPeriod;
             this.reflow = options.reflow;
             this.nextvu = options.nextvu;
+            // must subtract 1 since first thing we do is add 1
+            this.lineNumber = options.initialLineNumber - 1;
         }
 
     }
@@ -688,7 +692,8 @@ class ReflowState {
     }
 }
 
-function processLines(lines: string[], options: ReflowOptions | null) {
+export function reflowLines(lines: string[], options: ReflowOptions | null): string {
     let state = new ReflowState(options);
     state.processLines(lines);
+    return state.getEmittedText();
 }
