@@ -6,7 +6,8 @@
 import ReflowOptions from "./ReflowOptions";
 import ReflowState from "./ReflowState";
 import { createReadStream, createWriteStream } from "fs";
-import { createInterface } from "readline";
+import readline from "readline";
+import LineByLineReader from "line-by-line";
 
 export function reflowLines(lines: string[], options: ReflowOptions | null): string {
     let state = new ReflowState(options);
@@ -15,22 +16,33 @@ export function reflowLines(lines: string[], options: ReflowOptions | null): str
 }
 
 
-export function reflowFile(filename: string, options: ReflowOptions | null): string {
+export function reflowFile(filename: string, options: ReflowOptions | null = null, cb: null | ((emitted: string) => void) = null) {
     let state = new ReflowState(options);
-    let input = createReadStream(filename, 'utf-8');
-    createInterface(input).on('line', line => {
-        state.processLine(line);
+    let reader = new LineByLineReader(filename, { encoding: 'utf8' })
+    // let input = createReadStream(filename, {encoding: 'utf-8'});
+    // let reader = readline.createInterface({input: input});
+    reader.on('line', line => {
+        state.processLine(line + '\n');
     });
-    state.endInput();
-    input.close();
+    reader.on('end', () => {
+        state.endInput();
+        if (cb !== null)
+            cb(state.getEmittedText());
+    })
+    // readInterface.question
+    // // reader.
+    // state.endInput();
+    // input.close();
     return state.getEmittedText();
 }
 
 export function reflowFileToFile(filename: string, outFilename: string, options: ReflowOptions | null) {
-    let results = reflowFile(filename, options);
+    reflowFile(filename, options, (emitted) => {
 
-    let stream = createWriteStream(outFilename, 'utf-8');
-    stream.write(results, ()=>{
-        stream.end();
+        let stream = createWriteStream(outFilename, 'utf-8');
+        stream.write(emitted, () => {
+            stream.end();
+        });
     });
+
 }

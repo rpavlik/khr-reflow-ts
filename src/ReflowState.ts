@@ -212,9 +212,9 @@ export default class ReflowState {
             return this.para
         }
 
-        log.info('reflowPara lead indent = ' + this.leadIndent +
-            'hangIndent =' + this.hangIndent +
-            'para:' + this.para[0])
+        log.debug('reflowPara lead indent = ' + this.leadIndent +
+            ' hangIndent = ' + this.hangIndent +
+            ' para:' + this.para[0])
 
         // Total words processed (we care about the *first* word vs. others)
         let wordCount = 0;
@@ -223,17 +223,16 @@ export default class ReflowState {
         let prevWord = ' ';
         let outLine: string | null = null;
         let outPara: string[] = [];
-        //import pdb; pdb.set_trace()
-        this.para.forEach(line => {
-            line = line.trimEnd();
+        for (const rawLine of this.para) {
+
+            let line = rawLine.trimEnd();
             let words = line.split(/[ \t]/);
 
-            // log.info('reflowPara: input line =', line)
+            // log.debug('reflowPara: input line =', line)
             let numWords = words.length - 1;
 
             let outLineLen = 0;
             let bulletPoint = false;
-            let startLine = false;
 
             for (let i = 0; i < numWords + 1; i++) {
                 let word = words[i];
@@ -244,9 +243,9 @@ export default class ReflowState {
                 if (i === numWords && word === '+') {
                     // Trailing ' +' must stay on the same line
                     endEscape = word
-                    // log.info('reflowPara last word of line =', word, 'prevWord =', prevWord, 'endEscape =', endEscape)
+                    // log.debug('reflowPara last word of line =', word, 'prevWord =', prevWord, 'endEscape =', endEscape)
                 } else {
-                    // log.info('reflowPara wordCount =', wordCount, 'word =', word, 'prevWord =', prevWord)
+                    // log.debug('reflowPara wordCount =', wordCount, 'word =', word, 'prevWord =', prevWord)
 
                 }
 
@@ -259,7 +258,12 @@ export default class ReflowState {
 
                     outPara = [];
 
-                    outLine = ' '.repeat(this.leadIndent) + word;
+                    if (this.leadIndent > 0) {
+                        outLine = ' '.repeat(this.leadIndent);
+                    } else {
+                        outLine = '';
+                    }
+                    outLine += word;
                     outLineLen = this.leadIndent + wordLen;
                     // If the paragraph begins with a bullet point, generate
                     // a hanging indent level if there isn't one already.
@@ -329,9 +333,6 @@ export default class ReflowState {
                             outLine += ' ' + word;
                             outLineLen = newLen;
                         } else {
-                            // Fall through to startLine case if there's no
-                            // current line yet.
-                            startLine = true;
                         }
                     }
 
@@ -356,7 +357,7 @@ export default class ReflowState {
                 prevWord = word;
 
             }
-        });
+        }
         // Add this line to the output paragraph.
         if (truthyString(outLine)) {
             outPara.push(outLine + '\n');
@@ -392,7 +393,7 @@ export default class ReflowState {
                     let matches = this.para[0].match(Regexes.vuPat);
                     if (matches !== null && matches.groups !== null && matches.groups !== undefined) {
 
-                        log.info('findRefs: Matched vuPat on line: ' + this.para[0]);
+                        log.debug('findRefs: Matched vuPat on line: ' + this.para[0]);
                         let head = matches.groups['head'];
                         let tail = matches.groups['tail'];
 
@@ -465,7 +466,7 @@ export default class ReflowState {
     // 'line' ends a paragraph and should itthis be emitted.
     // line may be null to indicate EOF or other exception.
     private endPara(line: string | null) {
-        log.info('endPara line ' + this.lineNumber + ': emitting paragraph')
+        log.debug('endPara line ' + this.lineNumber + ': emitting paragraph')
 
         // Emit current paragraph, this line, and reset tracker
         this.emitPara();
@@ -491,16 +492,16 @@ export default class ReflowState {
         this.endPara(line)
 
         if (this.blockStack[this.blockStack.length - 1] === line) {
-            log.info('endBlock line ' + this.lineNumber +
+            log.debug('endBlock line ' + this.lineNumber +
                 ': popping block end depth: ' + this.blockStack.length + ': ' + line);
 
             // Reset apiName at the end of an open block.
             // Open blocks cannot be nested, so this is safe.
             if (this.isOpenBlockDelimiter(line)) {
-                log.info('reset apiName to empty at line ' + this.lineNumber)
+                log.debug('reset apiName to empty at line ' + this.lineNumber)
                 this.apiName = ''
             } else {
-                log.info('NOT resetting apiName to empty at line ' + this.lineNumber)
+                log.debug('NOT resetting apiName to empty at line ' + this.lineNumber)
             }
             this.blockStack.pop();
             this.reflowStack.pop();
@@ -512,7 +513,7 @@ export default class ReflowState {
             this.reflowStack.push(reflow);
             this.vuStack.push(vuBlock);
 
-            log.info('endBlock reflow = ' + reflow + ' line ' + this.lineNumber +
+            log.debug('endBlock reflow = ' + reflow + ' line ' + this.lineNumber +
                 ': pushing block start depth '
                 + this.blockStack.length + ': ' + line);
         }
@@ -542,20 +543,20 @@ export default class ReflowState {
     // In this case, when the higher indentation level ends, so does the
     // paragraph.
     private addLine(line: string) {
-        log.info('addLine line ' + this.lineNumber + ': ' + line)
+        log.debug('addLine line ' + this.lineNumber + ': ' + line)
 
         let indent = line.length - line.trimStart().length;
 
         // A hanging paragraph ends due to a less-indented line.
         if (this.para.length > 0 && indent < this.hangIndent) {
-            log.info('addLine: line reduces indentation, emit paragraph');
+            log.debug('addLine: line reduces indentation, emit paragraph');
             this.emitPara();
         }
 
         // A bullet point (or something that looks like one) always ends the
         // current paragraph.
         if (Regexes.beginBullet.test(line)) {
-            log.info('addLine: line matches beginBullet, emit paragraph')
+            log.debug('addLine: line matches beginBullet, emit paragraph')
             this.emitPara();
         }
         if (this.para.length == 0) {
