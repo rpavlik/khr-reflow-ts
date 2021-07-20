@@ -70,9 +70,10 @@ const Regexes = {
 
 // Fake block delimiters for "common" VU statements
 const blockCommonReflow = '// Common Valid Usage\n';
+
 type BlockStackElement = string | null;
 
-function truthyString(s: string?) {
+function truthyString(s: string | null) {
     if (s == null) {
         return false;
     }
@@ -171,6 +172,11 @@ class ReflowState {
         return (word.slice(0, 7) == '[[VUID-');
     }
 
+    // Returns True if line is an open block delimiter.
+    isOpenBlockDelimiter(line: string): boolean {
+        return line.slice(0, 2) === '--';
+    }
+
 
     // Reflow the current paragraph, respecting the paragraph lead and
     // hanging indentation levels.
@@ -194,7 +200,7 @@ class ReflowState {
 
         // Tracks the *previous* word processed. It must not be empty.
         let prevWord = ' ';
-        let outLine: string?= null;
+        let outLine: string | null = null;
         let outPara: string[] = [];
         //import pdb; pdb.set_trace()
         this.para.forEach(line => {
@@ -341,9 +347,7 @@ class ReflowState {
     // Emit a paragraph, possibly reflowing it depending on the block context.
     //
     // Resets the paragraph accumulator.
-    emitPara(): string[] {
-        // def emitPara(this):
-        let result: string[] = [];
+    emitPara() {
         if (this.para.length > 0) {
             /// Skipping VU assignment code
             //         if this.vuStack[-1] and this.nextvu is not None:
@@ -405,9 +409,9 @@ class ReflowState {
             //             //             this.para[0])
 
             if (this.reflowStack[this.reflowStack.length - 1]) {
-                result = this.reflowPara();
+                this.printLines(this.reflowPara());
             } else {
-                result = this.para;
+                this.printLines(this.para);
             }
         }
 
@@ -415,108 +419,135 @@ class ReflowState {
         this.para = [];
         this.leadIndent = 0;
         this.hangIndent = 0;
-        return result;
     }
 
+    incrLineNumber() {
+        this.lineNumber += 1;
+    }
 
-    // def endPara(this, line):
-    //     // """'line' ends a paragraph and should itthis be emitted.
-    //     // line may be None to indicate EOF or other exception."""
-    //     logDiag('endPara line', this.lineNumber, ': emitting paragraph')
+    // Print an array of lines with newlines already present
+    printLines(lines: string[]) {
+        /// TODO
+        lines.forEach(line => {
+            if (line.endsWith('\n')) {
+                console.log(line.slice(0, -1));
+            } else {
+                console.log(line);
+            }
+        });
+    }
 
-    //     // Emit current paragraph, this line, and reset tracker
-    //     this.emitPara()
+    // 'line' ends a paragraph and should itthis be emitted.
+    // line may be null to indicate EOF or other exception.
+    endPara(line: string | null) {
+        // def endPara(this, line):
+        log.info('endPara line ' + this.lineNumber + ': emitting paragraph')
 
-    //     if line:
-    //         this.printLines( [ line ] )
+        // Emit current paragraph, this line, and reset tracker
+        this.emitPara();
 
-    // def endParaContinue(this, line):
-    //     // """'line' ends a paragraph (unless there's already a paragraph being
-    //     // accumulated, e.g. len(para) > 0 - currently not implemented)"""
-    //     this.endPara(line)
+        if (line != null) {
+            this.printLines([line]);
+        }
+    }
 
-    // def endBlock(this, line, reflow = False, vuBlock = False):
-    //     // """'line' begins or ends a block.
+    // 'line' ends a paragraph (unless there's already a paragraph being
+    // accumulated, e.g. len(para) > 0 - currently not implemented)
+    endParaContinue(line: string) {
+        this.endPara(line);
+    }
 
-    //     // If beginning a block, tag whether or not to reflow the contents.
+    // 'line' begins or ends a block.
+    endBlock(line: string, reflow = false, vuBlock = false) {
+        // def endBlock(this, line, reflow = false, vuBlock = false):
 
-    //     // vuBlock is True if the previous line indicates this is a Valid Usage block."""
-    //     this.endPara(line)
+        // If beginning a block, tag whether or not to reflow the contents.
 
-    //     if this.blockStack[-1] == line:
-    //         logDiag('endBlock line', this.lineNumber,
-    //                 ': popping block end depth:', len(this.blockStack),
-    //                 ':', line, end='')
+        // vuBlock is true if the previous line indicates this is a Valid Usage block.
+        this.endPara(line)
 
-    //         // Reset apiName at the end of an open block.
-    //         // Open blocks cannot be nested, so this is safe.
-    //         if this.isOpenBlockDelimiter(line):
-    //             logDiag('reset apiName to empty at line', this.lineNumber)
-    //             this.apiName = ''
-    //         else:
-    //             logDiag('NOT resetting apiName to empty at line', this.lineNumber)
+        if (this.blockStack[this.blockStack.length - 1] === line) {
+            log.info('endBlock line ' + this.lineNumber +
+                ': popping block end depth: ' + this.blockStack.length + ': ' + line);
 
-    //         this.blockStack.pop()
-    //         this.reflowStack.pop()
-    //         this.vuStack.pop()
-    //     else:
-    //         // Start a block
-    //         this.blockStack.append(line)
-    //         this.reflowStack.append(reflow)
-    //         this.vuStack.append(vuBlock)
+            // Reset apiName at the end of an open block.
+            // Open blocks cannot be nested, so this is safe.
+            if (this.isOpenBlockDelimiter(line)) {
+                log.info('reset apiName to empty at line ' + this.lineNumber)
+                this.apiName = ''
+            } else {
+                log.info('NOT resetting apiName to empty at line ' + this.lineNumber)
+            }
+            this.blockStack.pop();
+            this.reflowStack.pop();
+            this.vuStack.pop();
+        } else {
 
-    //         logDiag('endBlock reflow =', reflow, ' line', this.lineNumber,
-    //                 ': pushing block start depth', len(this.blockStack),
-    //                 ':', line, end='')
+            // Start a block
+            this.blockStack.push(line);
+            this.reflowStack.push(reflow);
+            this.vuStack.push(vuBlock);
 
-    // def endParaBlockReflow(this, line, vuBlock):
-    //     // """'line' begins or ends a block. The paragraphs in the block *should* be
-    //     // reformatted (e.g. a NOTE)."""
-    //     this.endBlock(line, reflow = True, vuBlock = vuBlock)
+            log.info('endBlock reflow = ' + reflow + ' line ' + this.lineNumber +
+                ': pushing block start depth '
+                + this.blockStack.length + ': ' + line);
+        }
+    }
+    // 'line' begins or ends a block. The paragraphs in the block *should* be
+    // reformatted (e.g. a NOTE).
+    endParaBlockReflow(line: string, vuBlock: boolean) {
+        // def endParaBlockReflow(this, line, vuBlock):
+        this.endBlock(line, true, vuBlock = vuBlock);
+    }
 
-    // def endParaBlockPassthrough(this, line):
-    //     // """'line' begins or ends a block. The paragraphs in the block should
-    //     // *not* be reformatted (e.g. a code listing)."""
-    //     this.endBlock(line, reflow = False)
+    // 'line' begins or ends a block. The paragraphs in the block should
+    // *not* be reformatted (e.g. a code listing).
+    endParaBlockPassthrough(line: string) {
+        this.endBlock(line, false);
+    }
 
-    // def addLine(this, line):
-    //     // """'line' starts or continues a paragraph.
+    // 'line' starts or continues a paragraph.
+    //
+    // Paragraphs may have "hanging indent", e.g.
+    //
+    // ```
+    //   * Bullet point...
+    //     ... continued
+    // ```
+    //
+    // In this case, when the higher indentation level ends, so does the
+    // paragraph.
+    addLine(line: string) {
+        log.info('addLine line ' + this.lineNumber + ': ' + line)
 
-    //     // Paragraphs may have "hanging indent", e.g.
+        let indent = line.length - line.trimStart().length;
 
-    //     // ```
-    //     //   * Bullet point...
-    //     //     ... continued
-    //     // ```
+        // A hanging paragraph ends due to a less-indented line.
+        if (this.para.length > 0 && indent < this.hangIndent) {
+            log.info('addLine: line reduces indentation, emit paragraph');
+            this.emitPara();
+        }
 
-    //     // In this case, when the higher indentation level ends, so does the
-    //     // paragraph."""
-    //     logDiag('addLine line', this.lineNumber, ':', line, end='')
+        // A bullet point (or something that looks like one) always ends the
+        // current paragraph.
+        if (Regexes.beginBullet.exec(line)) {
+            log.info('addLine: line matches beginBullet, emit paragraph')
+            this.emitPara();
 
-    //     // See https://stackoverflow.com/questions/13648813/what-is-the-pythonic-way-to-count-the-leading-spaces-in-a-string
-    //     indent = len(line) - len(line.lstrip())
-
-    //     // A hanging paragraph ends due to a less-indented line.
-    //     if this.para != [] and indent < this.hangIndent:
-    //         logDiag('addLine: line reduces indentation, emit paragraph')
-    //         this.emitPara()
-
-    //     // A bullet point (or something that looks like one) always ends the
-    //     // current paragraph.
-    //     if beginBullet.match(line):
-    //         logDiag('addLine: line matches beginBullet, emit paragraph')
-    //         this.emitPara()
-
-    //     if this.para == []:
-    //         // Begin a new paragraph
-    //         this.para = [ line ]
-    //         this.leadIndent = indent
-    //         this.hangIndent = indent
-    //     else:
-    //         // Add a line to a paragraph. Increase the hanging indentation
-    //         // level - once.
-    //         if this.hangIndent == this.leadIndent:
-    //             this.hangIndent = indent
-    //         this.para.append(line)
+        }
+        if (this.para.length == 0) {
+            // Begin a new paragraph
+            this.para = [line];
+            this.leadIndent = indent;
+            this.hangIndent = indent;
+        } else {
+            // Add a line to a paragraph. Increase the hanging indentation
+            // level - once.
+            if (this.hangIndent == this.leadIndent) {
+                this.hangIndent = indent;
+            }
+            this.para.push(line);
+        }
+    }
 
 }
