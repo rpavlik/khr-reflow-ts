@@ -1,4 +1,11 @@
+// Copyright (c) 2016-2021, The Khronos Group Inc.
+// Copyright 2021 Collabora, Ltd
+//
+// SPDX-License-Identifier: Apache-2.0
+
+
 import { Logger } from "tslog";
+import ReflowOptions from "./ReflowOptions";
 
 const log: Logger = new Logger({ name: "ReflowState" });
 
@@ -95,25 +102,8 @@ function apiMatch(oldname: string, newname: string): boolean {
     return oldname.replace(trailingUpper, '') === newname.replace(trailingUpper, '');
 }
 
-export class ReflowOptions {
-    // margin to reflow text to.
-    margin: number = 76;
 
-    // true if justification should break to a new line after the end of a sentence.
-    breakPeriod: boolean = true;
-
-    // true if text should be reflowed, false to pass through unchanged.
-    reflow: boolean = true;
-
-    // Integer to start tagging un-numbered Valid Usage statements with,
-    // or null if no tagging should be done.
-    nextvu: number | null = null;
-
-    // Line number to start at
-    initialLineNumber: number = 1;
-};
-
-class ReflowState {
+export default class ReflowState {
     // The last element is a line with the asciidoc block delimiter that's currently in effect,
     // such as '--', '----', '****', '======', or '+++++++++'.
     // This affects whether or not the block contents should be formatted.
@@ -169,7 +159,11 @@ class ReflowState {
     // or null if one hasn't been included in this file yet.
     private apiName: string | null = null;
 
+    // All strings that get passed to printLines()
     private emittedText: string[] = [];
+
+    // Line before the one we are processing
+    private lastLine: string | null = null;
 
     constructor(options: ReflowOptions | null) {
         if (options !== null) {
@@ -471,7 +465,6 @@ class ReflowState {
     // 'line' ends a paragraph and should itthis be emitted.
     // line may be null to indicate EOF or other exception.
     private endPara(line: string | null) {
-        // def endPara(this, line):
         log.info('endPara line ' + this.lineNumber + ': emitting paragraph')
 
         // Emit current paragraph, this line, and reset tracker
@@ -564,7 +557,6 @@ class ReflowState {
         if (Regexes.beginBullet.test(line)) {
             log.info('addLine: line matches beginBullet, emit paragraph')
             this.emitPara();
-
         }
         if (this.para.length == 0) {
             // Begin a new paragraph
@@ -581,103 +573,113 @@ class ReflowState {
         }
     }
 
-    private processLine(line: string) {
+    // Process a single line of input
+    processLine(line: string) {
+        this.incrLineNumber();
 
+        // Is this a title line (leading '= ' followed by text)?
+        let thisTitle = false;
+
+        // The logic here is broken. If we're in a non-reflowable block and
+        // this line *doesn't* end the block, it should always be
+        // accumulated.
+
+        // Test for a blockCommonReflow delimiter comment first, to avoid
+        // treating it solely as a end-Paragraph marker comment.
+        if (line === blockCommonReflow) {
+            // Starting or ending a pseudo-block for "common" VU statements.
+
+            // Common VU statements use an Asciidoc variable as the apiName,
+            // instead of inferring it from the most recent API include.
+            this.apiName = '{refpage}'
+            this.endParaBlockReflow(line, true);
+        } else if (Regexes.blockReflow.test(line)) {
+
+            // Starting or ending a block whose contents may be reflowed.
+            // Blocks cannot be nested.
+
+            // Is this is an explicit Valid Usage block?
+            let vuBlock = (this.lineNumber > 1 &&
+                this.lastLine === '.Valid Usage\n');
+
+            this.endParaBlockReflow(line, vuBlock);
+        } else if (Regexes.endPara.test(line)) {
+            // Ending a paragraph. Emit the current paragraph, if any, and
+            // prepare to begin a new paragraph.
+
+            this.endPara(line)
+
+            // If this is an include:: line starting the definition of a
+            // structure or command, track that for use in VUID generation.
+
+            let matches = line.match(Regexes.includePat);
+            if (matches !== null && matches.groups != null) {
+
+                //         if matches is not None:
+                let generated_type = matches.groups['generated_type'];
+                let include_type = matches.groups['category'];
+                if (generated_type === 'api' && (include_type === 'protos' || include_type === 'structs')) {
+                    let apiName = matches.groups['entity_name'];
+                    if (this.apiName !== '' && this.apiName !== null) {
+                        // This happens when there are multiple API include
+                        // lines in a single block. The style guideline is to
+                        // always place the API which others are promoted to
+                        // first. In virtually all cases, the promoted API
+                        // will differ solely in the vendor suffix (or
+                        // absence of it), which is benign.
+                        if (!apiMatch(this.apiName, apiName)) {
+                            log.warn(`Promoted API name mismatch at line ${this.lineNumber}: apiName: ${apiName} does not match this.apiName: ${this.apiName}`);
+                        }
+                    } else {
+                        this.apiName = apiName
+                    }
+                }
+
+            }
+        } else if (Regexes.endParaContinue.test(line)) {
+            // For now, always just end the paragraph.
+            // Could check see if len(para) > 0 to accumulate.
+
+            this.endParaContinue(line);
+
+            // If it's a title line, track that
+            if (line.slice(0, 2) === '= ') {
+                thisTitle = true;
+            }
+        } else if (Regexes.blockPassthrough.test(line)) {
+            // Starting or ending a block whose contents must not be reflowed.
+            // These are tables, etc. Blocks cannot be nested.
+
+            this.endParaBlockPassthrough(line);
+        } else if (this.lastTitle) {
+            // The previous line was a document title line. This line
+            // is the author / credits line and must not be reflowed.
+
+            this.endPara(line)
+        } else {
+            // Just accumulate a line to the current paragraph. Watch out for
+            // hanging indents / bullet-points and track that indent level.
+
+            this.addLine(line);
+        }
+        this.lastTitle = thisTitle;
+        this.lastLine = line;
 
     }
 
+    // Process all lines of a file or segment
+    //
+    // Calls endInput for you()
     processLines(lines: string[]) {
         lines.forEach(line => {
-            this.incrLineNumber();
-
-            // Is this a title line (leading '= ' followed by text)?
-            let thisTitle = false;
-
-            // The logic here is broken. If we're in a non-reflowable block and
-            // this line *doesn't* end the block, it should always be
-            // accumulated.
-
-            // Test for a blockCommonReflow delimiter comment first, to avoid
-            // treating it solely as a end-Paragraph marker comment.
-            if (line === blockCommonReflow) {
-                // Starting or ending a pseudo-block for "common" VU statements.
-
-                // Common VU statements use an Asciidoc variable as the apiName,
-                // instead of inferring it from the most recent API include.
-                this.apiName = '{refpage}'
-                this.endParaBlockReflow(line, true);
-            } else if (Regexes.blockReflow.test(line)) {
-
-                // Starting or ending a block whose contents may be reflowed.
-                // Blocks cannot be nested.
-
-                // Is this is an explicit Valid Usage block?
-                let vuBlock = (this.lineNumber > 1 &&
-                    lines[this.lineNumber - 2] === '.Valid Usage\n');
-
-                this.endParaBlockReflow(line, vuBlock);
-            } else if (Regexes.endPara.test(line)) {
-                // Ending a paragraph. Emit the current paragraph, if any, and
-                // prepare to begin a new paragraph.
-
-                this.endPara(line)
-
-                // If this is an include:: line starting the definition of a
-                // structure or command, track that for use in VUID generation.
-
-                let matches = line.match(Regexes.includePat);
-                if (matches !== null && matches.groups != null) {
-
-                    //         if matches is not None:
-                    let generated_type = matches.groups['generated_type'];
-                    let include_type = matches.groups['category'];
-                    if (generated_type === 'api' && (include_type === 'protos' || include_type === 'structs')) {
-                        let apiName = matches.groups['entity_name'];
-                        if (this.apiName !== '' && this.apiName !== null) {
-                            // This happens when there are multiple API include
-                            // lines in a single block. The style guideline is to
-                            // always place the API which others are promoted to
-                            // first. In virtually all cases, the promoted API
-                            // will differ solely in the vendor suffix (or
-                            // absence of it), which is benign.
-                            if (!apiMatch(this.apiName, apiName)) {
-                                log.warn(`Promoted API name mismatch at line ${this.lineNumber}: apiName: ${apiName} does not match this.apiName: ${this.apiName}`);
-                            }
-                        } else {
-                            this.apiName = apiName
-                        }
-                    }
-
-                }
-            } else if (Regexes.endParaContinue.test(line)) {
-                // For now, always just end the paragraph.
-                // Could check see if len(para) > 0 to accumulate.
-
-                this.endParaContinue(line);
-
-                // If it's a title line, track that
-                if (line.slice(0, 2) === '= ') {
-                    thisTitle = true;
-                }
-            } else if (Regexes.blockPassthrough.test(line)) {
-                // Starting or ending a block whose contents must not be reflowed.
-                // These are tables, etc. Blocks cannot be nested.
-
-                this.endParaBlockPassthrough(line);
-            } else if (this.lastTitle) {
-                // The previous line was a document title line. This line
-                // is the author / credits line and must not be reflowed.
-
-                this.endPara(line)
-            } else {
-                // Just accumulate a line to the current paragraph. Watch out for
-                // hanging indents / bullet-points and track that indent level.
-
-                this.addLine(line);
-            }
-            this.lastTitle = thisTitle;
+            this.processLine(line);
         });
 
+        this.endInput();
+    }
+
+    // Clean up after processing all lines of input.
+    endInput() {
         // Cleanup at end of file
         this.endPara(null);
 
@@ -687,13 +689,8 @@ class ReflowState {
         }
     }
 
+    // Gets the output
     getEmittedText(): string {
         return this.emittedText.join('');
     }
-}
-
-export function reflowLines(lines: string[], options: ReflowOptions | null): string {
-    let state = new ReflowState(options);
-    state.processLines(lines);
-    return state.getEmittedText();
 }

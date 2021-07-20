@@ -3,4 +3,12 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+import ReflowOptions from "./ReflowOptions";
+import ReflowState from "./ReflowState";
+
+export function reflowLines(lines: string[], options: ReflowOptions | null): string {
+    let state = new ReflowState(options);
+    state.processLines(lines);
+    return state.getEmittedText();
+}
 
