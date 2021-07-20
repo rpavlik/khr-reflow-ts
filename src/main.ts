@@ -5,6 +5,8 @@
 
 import ReflowOptions from "./ReflowOptions";
 import ReflowState from "./ReflowState";
+import { createReadStream } from "fs";
+import { createInterface } from "readline";
 
 export function reflowLines(lines: string[], options: ReflowOptions | null): string {
     let state = new ReflowState(options);
@@ -12,3 +14,13 @@ export function reflowLines(lines: string[], options: ReflowOptions | null): str
     return state.getEmittedText();
 }
 
+
+export function reflowFile(filename: string, options: ReflowOptions | null): string {
+    let state = new ReflowState(options);
+    let input = createReadStream(filename);
+    createInterface(input).on('line', line => {
+        state.processLine(line);
+    });
+    state.endInput();
+    return state.getEmittedText();
+}
