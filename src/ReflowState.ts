@@ -57,7 +57,7 @@ const Regexes = {
     //   {empty}:: bullet
     //   1. list item
     //   <1> source listing callout
-    beginBul: /^ *([-*.]+|\{empty\}::|::|[0-9]+[.]|<([0-9]+)>) /,
+    beginBullet: /^ *([-*.]+|\{empty\}::|::|[0-9]+[.]|<([0-9]+)>) /,
 
     // Text that (may) not end sentences
 
@@ -71,6 +71,14 @@ const Regexes = {
 // Fake block delimiters for "common" VU statements
 const blockCommonReflow = '// Common Valid Usage\n';
 type BlockStackElement = string | null;
+
+function truthyString(s: string?) {
+    if (s == null) {
+        return false;
+    }
+    return (s.trim().length > 0);
+
+}
 
 class ReflowState {
     // The last element is a line with the asciidoc block delimiter that's currently in effect,
@@ -186,144 +194,229 @@ class ReflowState {
 
         // Tracks the *previous* word processed. It must not be empty.
         let prevWord = ' ';
-
+        let outLine: string?= null;
+        let outPara: string[] = [];
         //import pdb; pdb.set_trace()
         this.para.forEach(line => {
             line = line.trimEnd();
             let words = line.split(/[ \t]/);
 
-            // logDiag('reflowPara: input line =', line)
+            // log.info('reflowPara: input line =', line)
             let numWords = words.length - 1;
+
+            let outLineLen = 0;
+            let bulletPoint = false;
+            let startLine = false;
 
             for (let i = 0; i < numWords + 1; i++) {
                 let word = words[i];
-                //         word = words[i]
                 let wordLen = word.length;
                 wordCount += 1;
 
                 let endEscape: string | boolean = false;
                 if (i === numWords && word === '+') {
-                    //             // Trailing ' +' must stay on the same line
+                    // Trailing ' +' must stay on the same line
                     endEscape = word
-                    //             // logDiag('reflowPara last word of line =', word, 'prevWord =', prevWord, 'endEscape =', endEscape)
+                    // log.info('reflowPara last word of line =', word, 'prevWord =', prevWord, 'endEscape =', endEscape)
                 } else {
-                    //             // logDiag('reflowPara wordCount =', wordCount, 'word =', word, 'prevWord =', prevWord)
+                    // log.info('reflowPara wordCount =', wordCount, 'word =', word, 'prevWord =', prevWord)
 
                 }
 
                 if (wordCount === 1) {
 
-                    //         if wordCount == 1:
-                    //             // The first word of the paragraph is treated specially.
-                    //             // The loop logic becomes trickier if all this code is
-                    //             // done prior to looping over lines and words, so all the
-                    //             // setup logic is done here.
+                    // The first word of the paragraph is treated specially.
+                    // The loop logic becomes trickier if all this code is
+                    // done prior to looping over lines and words, so all the
+                    // setup logic is done here.
 
-                    let outPara = [];
+                    outPara = [];
 
-                    let outLine = ' '.repeat(this.leadIndent) + word;
-                    let outLineLen = this.leadIndent + wordLen;
-                    let bulletPoint = false;
-                    //             // If the paragraph begins with a bullet point, generate
-                    //             // a hanging indent level if there isn't one already.
+                    outLine = ' '.repeat(this.leadIndent) + word;
+                    outLineLen = this.leadIndent + wordLen;
+                    // If the paragraph begins with a bullet point, generate
+                    // a hanging indent level if there isn't one already.
                     if (Regexes.beginBullet.exec(this.para[0])) {
 
                         bulletPoint = true;
-                        if this.para.length > 1:
-                    //                     logDiag('reflowPara first line matches bullet point',
-                    //                             'but indent already hanging @ input line',
-                    //                             this.lineNumber)
-                    //                 else:
-                    //                     logDiag('reflowPara first line matches bullet point -'
-                    //                             'single line, assuming hangIndent @ input line',
-                    //                             this.lineNumber)
-                    //                     this.hangIndent = outLineLen + 1
-                                }
-                    //             else:
-                    //                 bulletPoint = false
+                        if (this.para.length > 1) {
+                            log.warn('reflowPara first line matches bullet point but indent already hanging @ input line ' + this.lineNumber)
+                        } else {
+                            log.warn('reflowPara first line matches bullet point - single line, assuming hangIndent @ input line ' + this.lineNumber);
+                            this.hangIndent = outLineLen + 1
+                        }
+                    } else {
+                        bulletPoint = false;
+                    }
                 } else {
-                    //             // Possible actions to take with this word
-                    //             //
-                    //             // addWord - add word to current line
-                    //             // closeLine - append line and start a new (null) one
-                    //             // startLine - add word to a new line
+                    // Possible actions to take with this word
+                    //
+                    // addWord - add word to current line
+                    // closeLine - append line and start a new (null) one
+                    // startLine - add word to a new line
 
-                    //             // Default behavior if all the tests below fail is to add
-                    //             // this word to the current line, and keep accumulating
-                    //             // that line.
-                    (addWord, closeLine, startLine) = (true, false, false)
+                    // Default behavior if all the tests below fail is to add
+                    // this word to the current line, and keep accumulating
+                    // that line.
+                    let actions = { addWord: true, closeLine: false, startLine: false };
 
-                        //             // How long would this line be if the word were added?
-                        //             newLen = outLineLen + 1 + wordLen
+                    // How long would this line be if the word were added?
+                    let newLen = outLineLen + 1 + wordLen;
 
-                        //             // Are we on the first word following a bullet point?
-                        //             firstBullet = (wordCount == 2 and bulletPoint)
+                    // Are we on the first word following a bullet point?
+                    let firstBullet = (wordCount === 2 && bulletPoint);
 
-                        //             if endEscape:
-                        //                 // If the new word ends the input line with ' +',
-                        //                 // add it to the current line.
+                    if (endEscape) {
+                        // If the new word ends the input line with ' +',
+                        // add it to the current line.
+                        actions = { addWord: true, closeLine: true, startLine: false };
+                    } else if (this.vuidAnchor(word)) {
+                        // If the new word is a Valid Usage anchor, break the
+                        // line afterwards. Note that this should only happen
+                        // immediately after a bullet point, but we don't
+                        // currently check for this.
+                        actions = { addWord: true, closeLine: true, startLine: false };
+                    } else if (newLen > this.margin) {
+                        if (firstBullet) {
+                            // If the word follows a bullet point, add it to
+                            // the current line no matter its length.
+                            actions = { addWord: true, closeLine: true, startLine: false };
+                        } else {
+                            // The word overflows, so add it to a new line.
+                            actions = { addWord: false, closeLine: true, startLine: true };
+                        }
+                    } else if (this.breakPeriod &&
+                        (wordCount > 2 || !firstBullet) &&
+                        this.endSentence(prevWord)) {
+                        // If the previous word ends a sentence and
+                        // breakPeriod is set, start a new line.
+                        // The complicated logic allows for leading bullet
+                        // points which are periods (implicitly numbered lists).
+                        // @@@ But not yet for explicitly numbered lists.
+                        actions = { addWord: false, closeLine: true, startLine: true };
+                    }
 
-                        (addWord, closeLine, startLine) = (true, true, false)
-                            //             elif this.vuidAnchor(word):
-                            //                 // If the new word is a Valid Usage anchor, break the
-                            //                 // line afterwards. Note that this should only happen
-                            //                 // immediately after a bullet point, but we don't
-                            //                 // currently check for this.
-                            (addWord, closeLine, startLine) = (true, true, false)
-                                //             elif newLen > this.margin:
-                                //                 if firstBullet:
-                                //                     // If the word follows a bullet point, add it to
-                                //                     // the current line no matter its length.
+                    // Add a word to the current line
+                    if (actions.addWord) {
+                        if (truthyString(outLine)) {
+                            outLine += ' ' + word;
+                            outLineLen = newLen;
+                        } else {
+                            // Fall through to startLine case if there's no
+                            // current line yet.
+                            startLine = true;
+                        }
+                    }
 
-                                (addWord, closeLine, startLine) = (true, true, false)
-                                    //                 else:
-                                    //                     // The word overflows, so add it to a new line.
+                    // Add current line to the output paragraph. Force
+                    // starting a new line, although we don't yet know if it
+                    // will ever have contents.
+                    if (actions.closeLine) {
+                        if (truthyString(outLine)) {
+                            outPara.push(outLine + '\n');
+                            outLine = null;
+                        }
+                    }
 
-                                    (addWord, closeLine, startLine) = (false, true, true)
-                                        //             elif (this.breakPeriod and
-                                        //                   (wordCount > 2 or not firstBullet) and
-                                        //                   this.endSentence(prevWord)):
-                                        //                 // If the previous word ends a sentence and
-                                        //                 // breakPeriod is set, start a new line.
-                                        //                 // The complicated logic allows for leading bullet
-                                        //                 // points which are periods (implicitly numbered lists).
-                                        //                 // @@@ But not yet for explicitly numbered lists.
-
-                                        (addWord, closeLine, startLine) = (false, true, true)
-
-                    //             // Add a word to the current line
-                    //             if addWord:
-                    //                 if outLine:
-                    //                     outLine += ' ' + word
-                    //                     outLineLen = newLen
-                    //                 else:
-                    //                     // Fall through to startLine case if there's no
-                    //                     // current line yet.
-                    startLine = true
-
-                    //             // Add current line to the output paragraph. Force
-                    //             // starting a new line, although we don't yet know if it
-                    //             // will ever have contents.
-                    //             if closeLine:
-                    //                 if outLine:
-                    //                     outPara.append(outLine + '\n')
-                    //                     outLine = None
-
-                    //             // Start a new line and add a word to it
-                    //             if startLine:
-                    //                 outLine = ''.ljust(this.hangIndent) + word
-                    //                 outLineLen = this.hangIndent + wordLen
+                    // Start a new line and add a word to it
+                    if (actions.startLine) {
+                        outLine = ' '.repeat(this.hangIndent) + word;
+                        outLineLen = this.hangIndent + wordLen;
+                    }
                 }
-                //         // Track the previous word, for use in breaking at end of
-                //         // a sentence
+                // Track the previous word, for use in breaking at end of
+                // a sentence
                 prevWord = word;
 
             }
         });
         // Add this line to the output paragraph.
-        if outLine:
-            outPara.append(outLine + '\n')
+        if (truthyString(outLine)) {
+            outPara.push(outLine + '\n');
+        }
 
-        return outPara
-
+        return outPara;
     }
+
+    // Emit a paragraph, possibly reflowing it depending on the block context.
+    //
+    // Resets the paragraph accumulator.
+    emitPara(): string[] {
+        // def emitPara(this):
+        let result: string[] = [];
+        if (this.para.length > 0) {
+            /// Skipping VU assignment code
+            //         if this.vuStack[-1] and this.nextvu is not None:
+            //             // If:
+            //             //   - this paragraph is in a Valid Usage block,
+            //             //   - VUID tags are being assigned,
+            //             // Try to assign VUIDs
+
+            //             if nestedVuPat.search(this.para[0]):
+            //                 // Check for nested bullet points. These should not be
+            //                 // assigned VUIDs, nor present at all, because they break
+            //                 // the VU extractor.
+            //                 log.warn(this.filename + ': Invalid nested bullet point in VU block: '+ this.para[0])
+            //             elif this.vuPrefix not in this.para[0]:
+            //                 // If:
+            //                 //   - a tag is not already present, and
+            //                 //   - the paragraph is a properly marked-up list item
+            //                 // Then add a VUID tag starting with the next free ID.
+
+            //                 // Split the first line after the bullet point
+            //                 matches = vuPat.search(this.para[0])
+            //                 if matches is not None:
+            //                     log.info('findRefs: Matched vuPat on line: ' + this.para[0])
+            //                     head = matches.group('head')
+            //                     tail = matches.group('tail')
+
+            //                     // Use the first pname: statement in the paragraph as
+            //                     // the parameter name in the VUID tag. This won't always
+            //                     // be correct, but should be highly reliable.
+            //                     for vuLine in this.para:
+            //                         matches = pnamePat.search(vuLine)
+            //                         if matches is not None:
+            //                             break
+
+            //                     if matches is not None:
+            //                         paramName = matches.group('param')
+            //                     else:
+            //                         paramName = 'None'
+            //                         log.warn(this.filename + 
+            //                                 ' No param name found for VUID tag on line: ' +
+            //                                 this.para[0])
+
+            //                     newline = (head + ' [[' +
+            //                                this.vuFormat.format(this.vuPrefix,
+            //                                                     this.apiName,
+            //                                                     paramName,
+            //                                                     this.nextvu) + ']] ' + tail)
+
+            //                     log.info('Assigning', this.vuPrefix, this.apiName, this.nextvu,
+            //                             ' on line:', this.para[0], '->', newline, 'END')
+
+            //                     this.para[0] = newline
+            //                     this.nextvu = this.nextvu + 1
+            //             // else:
+            //             //     There are only a few cases of this, and they're all
+            //             //     legitimate. Leave detecting this case to another tool
+            //             //     or hand inspection.
+            //             //     log.warn(this.filename + ': Unexpected non-bullet item in VU block (harmless if following an ifdef):',
+            //             //             this.para[0])
+
+            if (this.reflowStack[this.reflowStack.length - 1]) {
+                result = this.reflowPara();
+            } else {
+                result = this.para;
+            }
+        }
+
+        // Reset the paragraph, including its indentation level
+        this.para = [];
+        this.leadIndent = 0;
+        this.hangIndent = 0;
+        return result;
+    }
+
+    
+}
