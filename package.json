@@ -4,9 +4,9 @@
   "description": "Reflow AsciiDoctor sources according to Khronos spec conventions.",
   "main": "src/main.js",
   "scripts": {
-    "reflow": "ts-node src/cli.ts"
+    "reflow": "ts-node src/cli.ts",
+    "test": "jest"
   },
-  "test": "jest",
   "author": "Ryan Pavlik",
   "license": "Apache-2.0",
   "repository": {
