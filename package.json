@@ -9,6 +9,9 @@
   "test": "jest",
   "author": "Ryan Pavlik",
   "license": "Apache-2.0",
+  "repository": {
+    "url": "https://github.com/rpavlik/khr-reflow-ts"
+  },
   "devDependencies": {
     "@types/jest": "^26.0.24",
     "@types/line-by-line": "^0.1.5",
