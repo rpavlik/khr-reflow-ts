@@ -1,8 +1,8 @@
 {
   "name": "khr-reflow-ts",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Reflow AsciiDoctor sources according to Khronos spec conventions.",
-  "main": "src/main.js",
+  "main": "src/main.ts",
   "scripts": {
     "reflow": "ts-node src/cli.ts",
     "test": "jest",
@@ -11,6 +11,7 @@
   },
   "author": "Ryan Pavlik",
   "license": "Apache-2.0",
+  "type": "module",
   "repository": {
     "url": "https://github.com/rpavlik/khr-reflow-ts"
   },
