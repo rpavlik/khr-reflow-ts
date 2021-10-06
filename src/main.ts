@@ -11,7 +11,7 @@ import LineByLineReader from "line-by-line";
 export function stringToLines(input: string): string[] {
     const results = input.match(/(\n)|([^\n]+\n?)/gm);
     if (!results) {
-        return []
+        return [];
     } else {
         return Array.from(results);
     }
@@ -26,17 +26,16 @@ export function reflowLines(lines: string[], options?: ReflowOptions | null | un
 
 export function reflowFile(filename: string, options: ReflowOptions | null = null, cb: null | ((emitted: string) => void) = null) {
     let state = new ReflowState(options === null ? undefined : options);
-    let reader = new LineByLineReader(filename, { encoding: 'utf8' })
+    let reader = new LineByLineReader(filename, { encoding: 'utf8' });
     // let input = createReadStream(filename, {encoding: 'utf-8'});
     // let reader = readline.createInterface({input: input});
-    reader.on('line', line => {
+    reader.on('line', (line: string) => {
         state.processLine(line + '\n');
     });
     reader.on('end', () => {
         state.endInput();
-        if (cb !== null)
-            cb(state.getEmittedText());
-    })
+        if (cb !== null) { cb(state.getEmittedText()); }
+    });
     // readInterface.question
     // // reader.
     // state.endInput();

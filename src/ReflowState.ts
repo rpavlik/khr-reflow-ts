@@ -17,7 +17,7 @@ const blockCommonReflow = '// Common Valid Usage\n';
 type BlockStackElement = string | null;
 
 function truthyString(s: string | null) {
-    if (s == null) {
+    if (s === null) {
         return false;
     }
     return (s.trim().length > 0);
@@ -118,7 +118,7 @@ export default class ReflowState {
     // Return true if word is a Valid Usage ID Tag anchor.
     private vuidAnchor(word: string) {
 
-        return (word.slice(0, 7) == '[[VUID-');
+        return (word.slice(0, 7) === '[[VUID-');
     }
 
     // Returns True if line is an open block delimiter.
@@ -137,12 +137,12 @@ export default class ReflowState {
     // given.
     private reflowPara() {
         if (!this.reflow) {
-            return this.para
+            return this.para;
         }
 
         log.debug('lead indent = ' + this.leadIndent +
             ' hangIndent = ' + this.hangIndent +
-            ' para:' + this.para[0])
+            ' para:' + this.para[0]);
 
         // Total words processed (we care about the *first* word vs. others)
         let paragraphWordCount = 0;
@@ -188,10 +188,10 @@ export default class ReflowState {
                     // a hanging indent level if there isn't one already.
                     if (bulletPoint) {
                         if (this.para.length > 1) {
-                            log.warn('reflowPara first line matches bullet point but indent already hanging @ input line ' + this.lineNumber)
+                            log.warn('reflowPara first line matches bullet point but indent already hanging @ input line ' + this.lineNumber);
                         } else {
                             log.warn('reflowPara first line matches bullet point - single line, assuming hangIndent @ input line ' + this.lineNumber);
-                            this.hangIndent = outLineBuf.length + 1
+                            this.hangIndent = outLineBuf.length + 1;
                         }
                     }
                 } else {
@@ -243,7 +243,7 @@ export default class ReflowState {
                     // Add a word to the current line
                     if (actions.addWord) {
                         if (outLineBuf.isEmpty()) {
-                            throw new Error("unhandled case in original code")
+                            throw new Error("unhandled case in original code");
                         }
                         outLineBuf.push(word);
                     }
@@ -261,7 +261,7 @@ export default class ReflowState {
                     // Start a new line and add a word to it
                     if (actions.startLine) {
                         if (!outLineBuf.isEmpty()) {
-                            throw new Error("unexpected")
+                            throw new Error("unexpected");
                         }
                         outLineBuf.indent = this.hangIndent;
                         outLineBuf.push(word);
@@ -298,7 +298,7 @@ export default class ReflowState {
                     //                 // assigned VUIDs, nor present at all, because they break
                     //                 // the VU extractor.
                     //                 log.warn(this.filename + ': Invalid nested bullet point in VU block: '+ this.para[0])
-                } else if (this.para[0].search(this.vuPrefix) == -1) {
+                } else if (this.para[0].search(this.vuPrefix) === -1) {
                     // If:
                     //   - a tag is not already present, and
                     //   - the paragraph is a properly marked-up list item
@@ -328,7 +328,7 @@ export default class ReflowState {
                         } else {
                             log.warn(
                                 'No param name found for VUID tag on line: ' +
-                                this.para[0])
+                                this.para[0]);
                         }
 
                         let paddedNum = nextvu.toString().padStart(5, "0");
@@ -381,7 +381,7 @@ export default class ReflowState {
     // 'line' ends a paragraph and should itthis be emitted.
     // line may be null to indicate EOF or other exception.
     private endPara(line: string | null) {
-        log.debug('endPara line ' + this.lineNumber + ': emitting paragraph')
+        log.debug('endPara line ' + this.lineNumber + ': emitting paragraph');
 
         // Emit current paragraph, this line, and reset tracker
         this.emitPara();
@@ -404,7 +404,7 @@ export default class ReflowState {
         // If beginning a block, tag whether or not to reflow the contents.
 
         // vuBlock is true if the previous line indicates this is a Valid Usage block.
-        this.endPara(line)
+        this.endPara(line);
 
         if (this.blockStack[this.blockStack.length - 1] === line) {
             log.debug('endBlock line ' + this.lineNumber +
@@ -413,10 +413,10 @@ export default class ReflowState {
             // Reset apiName at the end of an open block.
             // Open blocks cannot be nested, so this is safe.
             if (this.isOpenBlockDelimiter(line)) {
-                log.debug('reset apiName to empty at line ' + this.lineNumber)
-                this.apiName = ''
+                log.debug('reset apiName to empty at line ' + this.lineNumber);
+                this.apiName = '';
             } else {
-                log.debug('NOT resetting apiName to empty at line ' + this.lineNumber)
+                log.debug('NOT resetting apiName to empty at line ' + this.lineNumber);
             }
             this.blockStack.pop();
             this.reflowStack.pop();
@@ -458,7 +458,7 @@ export default class ReflowState {
     // In this case, when the higher indentation level ends, so does the
     // paragraph.
     private addLine(line: string) {
-        log.debug('addLine line ' + this.lineNumber + ': ' + line)
+        log.debug('addLine line ' + this.lineNumber + ': ' + line);
 
         let lineNoNewline = line.trimEnd();
         let indent = lineNoNewline.length - lineNoNewline.trimStart().length;
@@ -472,7 +472,7 @@ export default class ReflowState {
         // A bullet point (or something that looks like one) always ends the
         // current paragraph.
         if (Regexes.beginBullet.test(line)) {
-            log.debug('addLine: line matches beginBullet, emit paragraph')
+            log.debug('addLine: line matches beginBullet, emit paragraph');
             this.emitPara();
         }
         if (this.para.length === 0) {
@@ -514,7 +514,7 @@ export default class ReflowState {
 
             // Common VU statements use an Asciidoc variable as the apiName,
             // instead of inferring it from the most recent API include.
-            this.apiName = '{refpage}'
+            this.apiName = '{refpage}';
             this.endParaBlockReflow(line, true);
         } else if (Regexes.blockReflow.test(trimmed)) {
 
@@ -530,18 +530,18 @@ export default class ReflowState {
             // Ending a paragraph. Emit the current paragraph, if any, and
             // prepare to begin a new paragraph.
 
-            this.endPara(line)
+            this.endPara(line);
 
             // If this is an include:: line starting the definition of a
             // structure or command, track that for use in VUID generation.
 
             let matches = line.match(Regexes.includePat);
-            if (matches !== null && matches.groups != null) {
+            if (matches && matches.groups) {
 
                 //         if matches is not None:
-                let generated_type = matches.groups['generated_type'];
-                let include_type = matches.groups['category'];
-                if (generated_type === 'api' && (include_type === 'protos' || include_type === 'structs')) {
+                let generatedType = matches.groups['generated_type'];
+                let includeType = matches.groups['category'];
+                if (generatedType === 'api' && (includeType === 'protos' || includeType === 'structs')) {
                     let apiName = matches.groups['entity_name'];
                     if (this.apiName !== '' && this.apiName !== null) {
                         // This happens when there are multiple API include
@@ -554,7 +554,7 @@ export default class ReflowState {
                             log.warn(`Promoted API name mismatch at line ${this.lineNumber}: apiName: ${apiName} does not match this.apiName: ${this.apiName}`);
                         }
                     } else {
-                        this.apiName = apiName
+                        this.apiName = apiName;
                     }
                 }
 
@@ -578,7 +578,7 @@ export default class ReflowState {
             // The previous line was a document title line. This line
             // is the author / credits line and must not be reflowed.
 
-            this.endPara(line)
+            this.endPara(line);
         } else {
             // Just accumulate a line to the current paragraph. Watch out for
             // hanging indents / bullet-points and track that indent level.
@@ -592,9 +592,9 @@ export default class ReflowState {
 
     // Returns true if endInput() would essentially be a no-op.
     public isBetweenParagraphs(): boolean {
-        return (this.para === null || this.para.length == 0) &&
-            this.blockStack.length == 1 &&
-            this.vuStack.length == 1;
+        return (this.para === null || this.para.length === 0) &&
+            this.blockStack.length === 1 &&
+            this.vuStack.length === 1;
     }
 
     // Process all lines of a file or segment
@@ -654,7 +654,7 @@ function trimAndSplitLine(rawLine: string) {
 }
 
 class OutLineBuffer {
-    private outLineWords: string[] = []
+    private outLineWords: string[] = [];
     private _indent: number = 0;
     public get indent() {
         return this._indent;
@@ -669,7 +669,7 @@ class OutLineBuffer {
     public get length() {
         return this.indent +
             // all word lengths combined
-            this.outLineWords.map((s) => { return s.length }).reduce((sum, len) => { return sum + len }, 0) +
+            this.outLineWords.map((s) => { return s.length; }).reduce((sum, len) => { return sum + len; }, 0) +
             // spaces between words
             Math.max(0, this.outLineWords.length - 1);
     }
@@ -687,7 +687,7 @@ class OutLineBuffer {
         this.outLineWords.push(word);
     }
     public reset() {
-        this.outLineWords = []
+        this.outLineWords = [];
         this.indent = 0;
     }
 }

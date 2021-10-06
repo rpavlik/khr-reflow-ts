@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { Regexes } from "./Regexes"
+import { Regexes } from "./Regexes";
 
 
 describe('endPara', () => {
@@ -25,7 +25,7 @@ describe('endPara', () => {
         expect('+5').not.toMatch(Regexes.endPara);
         // expect('////').not.toMatch(Regexes.endPara);
     });
-})
+});
 
 describe('endParaContinue', () => {
     test('should match these strings', () => {
@@ -37,7 +37,7 @@ describe('endParaContinue', () => {
     });
     test('should not match these', () => {
     });
-})
+});
 
 describe('blockReflow', () => {
     test('should match these strings', () => {
@@ -60,7 +60,7 @@ describe('blockReflow', () => {
         expect('===').not.toMatch(Regexes.blockReflow);
         expect('___').not.toMatch(Regexes.blockReflow);
     });
-})
+});
 
 describe('blockPassthrough', () => {
     test('should match these strings', () => {

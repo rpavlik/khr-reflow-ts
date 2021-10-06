@@ -13,7 +13,10 @@ function readExpectedFile(name: string): string {
 }
 
 function readInputData(name: string, inputNum?: number): string[] {
-    const fn = path.join(__dirname, '../test-data', (inputNum == undefined) ? `${name}.input.adoc` : `${name}.input.${inputNum}.adoc`);
+    const fn = path.join(__dirname, '../test-data',
+        (inputNum === undefined) ?
+            `${name}.input.adoc` :
+            `${name}.input.${inputNum}.adoc`);
     return stringToLines(fs.readFileSync(fn, { encoding: 'utf-8' }));
 }
 
@@ -37,7 +40,7 @@ test('first do no harm', () => {
     let bareInput =
         `This is a first line.
 `;
-    let input = stringToLines(bareInput)
+    let input = stringToLines(bareInput);
     expect(input).toHaveLength(1);
     expect(input[0]).toMatch(/\n$/m);
     expect(reflowLines(input, null)).toEqual(input.join(''));
