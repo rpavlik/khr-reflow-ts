@@ -85,8 +85,18 @@ describe('blockPassthrough', () => {
         expect('---').not.toMatch(Regexes.blockPassthrough); // (4 or more)  (listing block)
         expect('``').not.toMatch(Regexes.blockPassthrough); //  (exactly 3)  (listing block)
         expect('````').not.toMatch(Regexes.blockPassthrough);
+    });
 
+});
 
+describe('endAbbrev', () => {
+    test('should match these strings', () => {
+        expect('e.g.').toMatch(Regexes.endAbbrev);
+        expect('i.e.').toMatch(Regexes.endAbbrev);
+        expect('c.f.').toMatch(Regexes.endAbbrev);
+    });
+    test('should not match these', () => {
+        expect('e.e.').not.toMatch(Regexes.endAbbrev);
     });
 
 });
