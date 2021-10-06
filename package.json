@@ -5,7 +5,8 @@
   "main": "src/main.js",
   "scripts": {
     "reflow": "ts-node src/cli.ts",
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
   "author": "Ryan Pavlik",
   "license": "Apache-2.0",
