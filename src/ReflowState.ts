@@ -145,38 +145,34 @@ export default class ReflowState {
             ' para:' + this.para[0])
 
         // Total words processed (we care about the *first* word vs. others)
-        let wordCount = 0;
+        let paragraphWordCount = 0;
 
         // Tracks the *previous* word processed. It must not be empty.
         let prevWord = ' ';
-        let outLine: string | null = null;
-        let outLineLen = 0;
+        let outLineBuf = new OutLineBuffer();
         let outPara: string[] = [];
         for (const rawLine of this.para) {
 
-            let line = rawLine.trimEnd();
-            let words = line.length > 0 ? line.split(/[ \t]/) : [];
+            // let line = rawLine.trimEnd();
+            // let words = line.length > 0 ? line.split(/[ \t]/) : [];
+            let words = trimAndSplitLine(rawLine);
 
             // log.debug('reflowPara: input line =', line)
             let numWords = words.length - 1;
 
-            let bulletPoint = false;
+            // Trailing ' +' must stay on the same line
+            let endEscapeLine = getEndEscape(words);
+            const bulletPoint = this.paraBeginsWithBullet;
 
             for (const [i, word] of words.entries()) {
                 let wordLen = word.length;
-                wordCount += 1;
+                paragraphWordCount += 1;
 
-                let endEscape: string | boolean = false;
-                if (i === numWords && word === '+') {
-                    // Trailing ' +' must stay on the same line
-                    endEscape = word
-                    // log.debug('reflowPara last word of line =', word, 'prevWord =', prevWord, 'endEscape =', endEscape)
-                } else {
-                    // log.debug('reflowPara wordCount =', wordCount, 'word =', word, 'prevWord =', prevWord)
+                const isLastWordOfLine = i === numWords;
+                const isFirstWordOfParagraph = paragraphWordCount === 1;
 
-                }
 
-                if (wordCount === 1) {
+                if (isFirstWordOfParagraph) {
 
                     // The first word of the paragraph is treated specially.
                     // The loop logic becomes trickier if all this code is
@@ -185,26 +181,18 @@ export default class ReflowState {
 
                     outPara = [];
 
-                    if (this.leadIndent > 0) {
-                        outLine = ' '.repeat(this.leadIndent);
-                    } else {
-                        outLine = '';
-                    }
-                    outLine += word;
-                    outLineLen = this.leadIndent + wordLen;
+                    outLineBuf.indent = this.leadIndent;
+                    outLineBuf.push(word);
+
                     // If the paragraph begins with a bullet point, generate
                     // a hanging indent level if there isn't one already.
-                    if (Regexes.beginBullet.test(this.para[0])) {
-
-                        bulletPoint = true;
+                    if (bulletPoint) {
                         if (this.para.length > 1) {
                             log.warn('reflowPara first line matches bullet point but indent already hanging @ input line ' + this.lineNumber)
                         } else {
                             log.warn('reflowPara first line matches bullet point - single line, assuming hangIndent @ input line ' + this.lineNumber);
-                            this.hangIndent = outLineLen + 1
+                            this.hangIndent = outLineBuf.length + 1
                         }
-                    } else {
-                        bulletPoint = false;
                     }
                 } else {
                     // Possible actions to take with this word
@@ -219,12 +207,12 @@ export default class ReflowState {
                     let actions = { addWord: true, closeLine: false, startLine: false };
 
                     // How long would this line be if the word were added?
-                    let newLen = outLineLen + 1 + wordLen;
+                    const newLen = outLineBuf.length + 1 + wordLen;
 
                     // Are we on the first word following a bullet point?
-                    let firstBullet = (wordCount === 2 && bulletPoint);
+                    const firstBullet = (paragraphWordCount === 2 && bulletPoint);
 
-                    if (endEscape) {
+                    if (isLastWordOfLine && endEscapeLine) {
                         // If the new word ends the input line with ' +',
                         // add it to the current line.
                         actions = { addWord: true, closeLine: true, startLine: false };
@@ -254,27 +242,29 @@ export default class ReflowState {
 
                     // Add a word to the current line
                     if (actions.addWord) {
-                        if (truthyString(outLine)) {
-                            outLine += ' ' + word;
-                            outLineLen = newLen;
-                        } else {
+                        if (outLineBuf.isEmpty()) {
+                            throw new Error("unhandled case in original code")
                         }
+                        outLineBuf.push(word);
                     }
 
                     // Add current line to the output paragraph. Force
                     // starting a new line, although we don't yet know if it
                     // will ever have contents.
                     if (actions.closeLine) {
-                        if (truthyString(outLine)) {
-                            outPara.push(outLine + '\n');
-                            outLine = null;
+                        if (!outLineBuf.isEmpty()) {
+                            outPara.push(outLineBuf.line + '\n');
+                            outLineBuf.reset();
                         }
                     }
 
                     // Start a new line and add a word to it
                     if (actions.startLine) {
-                        outLine = ' '.repeat(this.hangIndent) + word;
-                        outLineLen = this.hangIndent + wordLen;
+                        if (!outLineBuf.isEmpty()) {
+                            throw new Error("unexpected")
+                        }
+                        outLineBuf.indent = this.hangIndent;
+                        outLineBuf.push(word);
                     }
                 }
                 // Track the previous word, for use in breaking at end of
@@ -284,8 +274,8 @@ export default class ReflowState {
             }
         }
         // Add this line to the output paragraph.
-        if (truthyString(outLine)) {
-            outPara.push(outLine + '\n');
+        if (!outLineBuf.isEmpty()) {
+            outPara.push(outLineBuf.line + '\n');
         }
 
         return outPara;
@@ -619,5 +609,64 @@ export default class ReflowState {
     // Gets the output
     getEmittedText(): string {
         return this.emittedText.join('');
+    }
+    private get paraBeginsWithBullet() {
+        if (Regexes.beginBullet.test(this.para[0])) {
+            return true;
+        }
+        return false;
+    }
+}
+
+
+function getEndEscape(lineWords: string[]): "+" | null {
+
+    if (lineWords.length > 0) {
+        const lastWord = lineWords[lineWords.length - 1];
+        if (lastWord === '+') {
+            return lastWord;
+        }
+    }
+    return null;
+}
+function trimAndSplitLine(rawLine: string) {
+    let line = rawLine.trimEnd();
+    return line.length > 0 ? line.split(/[ \t]/) : [];
+}
+
+class OutLineBuffer {
+    private outLineWords: string[] = []
+    private _indent: number = 0;
+    public get indent() {
+        return this._indent;
+    }
+    public set indent(theIndent: number) {
+        if (theIndent < 0) {
+            throw new Error("Negative indent not allowed");
+        }
+    }
+
+    public get length() {
+        return this.indent +
+            // all word lengths combined
+            this.outLineWords.map((s) => { return s.length }).reduce((sum, len) => { return sum + len }, 0) +
+            // spaces between words
+            Math.max(0, this.outLineWords.length - 1);
+    }
+
+
+    public get line() {
+        let indent = (this.indent > 0) ? ' '.repeat(this.indent) : '';
+        return indent + this.outLineWords.join(' ');
+    }
+    public isEmpty() {
+        return this.outLineWords.length === 0;
+    }
+    public push(word: string) {
+        this.outLineWords.push(word);
+    }
+    public reset() {
+        this.outLineWords = []
+        this.indent = 0;
     }
 }
