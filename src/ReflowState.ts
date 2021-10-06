@@ -222,20 +222,19 @@ export default class ReflowState {
         // Tracks the *previous* word processed. It must not be empty.
         let prevWord = ' ';
         let outLine: string | null = null;
+        let outLineLen = 0;
         let outPara: string[] = [];
         for (const rawLine of this.para) {
 
             let line = rawLine.trimEnd();
-            let words = line.split(/[ \t]/);
+            let words = line.length > 0 ? line.split(/[ \t]/) : [];
 
             // log.debug('reflowPara: input line =', line)
             let numWords = words.length - 1;
 
-            let outLineLen = 0;
             let bulletPoint = false;
 
-            for (let i = 0; i < numWords + 1; i++) {
-                let word = words[i];
+            for (const [i, word] of words.entries()) {
                 let wordLen = word.length;
                 wordCount += 1;
 
@@ -316,9 +315,7 @@ export default class ReflowState {
                             // The word overflows, so add it to a new line.
                             actions = { addWord: false, closeLine: true, startLine: true };
                         }
-                    } else if (this.breakPeriod &&
-                        (wordCount > 2 || !firstBullet) &&
-                        this.endSentence(prevWord)) {
+                    } else if (this.breakPeriod && (i > 1 || !firstBullet) && this.endSentence(prevWord)) {
                         // If the previous word ends a sentence and
                         // breakPeriod is set, start a new line.
                         // The complicated logic allows for leading bullet
