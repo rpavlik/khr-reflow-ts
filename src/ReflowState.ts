@@ -545,7 +545,8 @@ export default class ReflowState {
     private addLine(line: string) {
         log.debug('addLine line ' + this.lineNumber + ': ' + line)
 
-        let indent = line.length - line.trimStart().length;
+        let lineNoNewline = line.trimEnd();
+        let indent = lineNoNewline.length - lineNoNewline.trimStart().length;
 
         // A hanging paragraph ends due to a less-indented line.
         if (this.para.length > 0 && indent < this.hangIndent) {
