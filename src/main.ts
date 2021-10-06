@@ -5,7 +5,7 @@
 
 import ReflowOptions from "./ReflowOptions";
 import ReflowState from "./ReflowState";
-import { createReadStream, createWriteStream } from "fs";
+import { createWriteStream } from "fs";
 import LineByLineReader from "line-by-line";
 
 export function stringToLines(input: string): string[] {
@@ -17,15 +17,15 @@ export function stringToLines(input: string): string[] {
     }
 }
 
-export function reflowLines(lines: string[], options: ReflowOptions | null): string {
-    let state = new ReflowState(options);
+export function reflowLines(lines: string[], options?: ReflowOptions | null | undefined): string {
+    let state = new ReflowState(options === null ? undefined : options);
     state.processLines(lines);
     return state.getEmittedText();
 }
 
 
 export function reflowFile(filename: string, options: ReflowOptions | null = null, cb: null | ((emitted: string) => void) = null) {
-    let state = new ReflowState(options);
+    let state = new ReflowState(options === null ? undefined : options);
     let reader = new LineByLineReader(filename, { encoding: 'utf8' })
     // let input = createReadStream(filename, {encoding: 'utf-8'});
     // let reader = readline.createInterface({input: input});
