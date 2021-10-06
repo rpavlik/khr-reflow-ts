@@ -64,3 +64,13 @@ test('box do no harm', () => {
     let input = stringToLines(bareInput);
     expect(reflowLines(input, null)).toEqual(bareInput);
 });
+
+test('box preserve hanging indent', () => {
+    const data = readTestData("preserve-hanging-indent");
+    expect(reflowLines(data.input, null)).toEqual(data.expected);
+});
+
+test('box with hanging indent', () => {
+    const data = readNumberedTestData("hanging-indent", 1);
+    expect(reflowLines(data.input, null)).toEqual(data.expected);
+});
