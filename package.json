@@ -6,7 +6,8 @@
   "scripts": {
     "reflow": "ts-node src/cli.ts",
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+		"lint": "eslint src --ext ts"
   },
   "author": "Ryan Pavlik",
   "license": "Apache-2.0",
