@@ -1,0 +1,9 @@
+.Extension Name Formatting
+****
+* A string identifier for the vendor tag, which corresponds to the company
+  or group exposing the extension.
+  The vendor tag must: use only uppercase letters and decimal digits.
+* A string uniquely identifying the extension.
+  The string is a compound of substrings which must: use only lower case
+  letters and decimal digits.
+****
