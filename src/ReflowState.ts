@@ -494,6 +494,7 @@ export default class ReflowState {
     processLine(line: string) {
         this.incrLineNumber();
 
+        const trimmed = line.trimEnd();
         // Is this a title line (leading '= ' followed by text)?
         let thisTitle = false;
 
@@ -510,7 +511,7 @@ export default class ReflowState {
             // instead of inferring it from the most recent API include.
             this.apiName = '{refpage}'
             this.endParaBlockReflow(line, true);
-        } else if (Regexes.blockReflow.test(line)) {
+        } else if (Regexes.blockReflow.test(trimmed)) {
 
             // Starting or ending a block whose contents may be reflowed.
             // Blocks cannot be nested.
@@ -520,7 +521,7 @@ export default class ReflowState {
                 this.lastLine === '.Valid Usage\n');
 
             this.endParaBlockReflow(line, vuBlock);
-        } else if (Regexes.endPara.test(line)) {
+        } else if (Regexes.endPara.test(trimmed)) {
             // Ending a paragraph. Emit the current paragraph, if any, and
             // prepare to begin a new paragraph.
 
@@ -553,7 +554,7 @@ export default class ReflowState {
                 }
 
             }
-        } else if (Regexes.endParaContinue.test(line)) {
+        } else if (Regexes.endParaContinue.test(trimmed)) {
             // For now, always just end the paragraph.
             // Could check see if len(para) > 0 to accumulate.
 
@@ -563,7 +564,7 @@ export default class ReflowState {
             if (line.slice(0, 2) === '= ') {
                 thisTitle = true;
             }
-        } else if (Regexes.blockPassthrough.test(line)) {
+        } else if (Regexes.blockPassthrough.test(trimmed)) {
             // Starting or ending a block whose contents must not be reflowed.
             // These are tables, etc. Blocks cannot be nested.
 
