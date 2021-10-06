@@ -557,7 +557,7 @@ export default class ReflowState {
             log.debug('addLine: line matches beginBullet, emit paragraph')
             this.emitPara();
         }
-        if (this.para.length == 0) {
+        if (this.para.length === 0) {
             // Begin a new paragraph
             this.para = [line];
             this.leadIndent = indent;
@@ -565,7 +565,7 @@ export default class ReflowState {
         } else {
             // Add a line to a paragraph. Increase the hanging indentation
             // level - once.
-            if (this.hangIndent == this.leadIndent) {
+            if (this.hangIndent === this.leadIndent) {
                 this.hangIndent = indent;
             }
             this.para.push(line);
