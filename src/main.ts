@@ -6,8 +6,16 @@
 import ReflowOptions from "./ReflowOptions";
 import ReflowState from "./ReflowState";
 import { createReadStream, createWriteStream } from "fs";
-import readline from "readline";
 import LineByLineReader from "line-by-line";
+
+export function stringToLines(input: string): string[] {
+    const results = input.match(/(\n)|([^\n]+\n?)/gm);
+    if (!results) {
+        return []
+    } else {
+        return Array.from(results);
+    }
+}
 
 export function reflowLines(lines: string[], options: ReflowOptions | null): string {
     let state = new ReflowState(options);
