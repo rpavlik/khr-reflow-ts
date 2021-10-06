@@ -30,6 +30,7 @@ describe('endPara', () => {
 describe('endParaContinue', () => {
     test('should match these strings', () => {
         expect('.anything').toMatch(Regexes.endParaContinue);
+        expect(".Extension Name Formatting\n").toMatch(Regexes.endParaContinue);
         expect('=== Section Titles').toMatch(Regexes.endParaContinue);
         expect('image::path_to_image[attributes]').toMatch(Regexes.endParaContinue);
         expect('image:path_to_image[attributes]').toMatch(Regexes.endParaContinue);

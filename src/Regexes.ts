@@ -30,7 +30,7 @@ export const Regexes = {
     //   .anything
     //   === Section Titles
     //   image::path_to_image[attributes]  (apparently a single colon is OK but less idiomatic)
-    endParaContinue: /^(\..*|=+ .+|image:.*\[.*\])$/,
+    endParaContinue: /^(\..*)|(=+ .+)|(image:.*\[.*\])$/,
 
     // Markup for block delimiters whose contents *should* be reformatted
     //   --   (exactly two)  (open block)
