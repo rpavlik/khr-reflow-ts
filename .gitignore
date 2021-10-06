@@ -5,3 +5,8 @@ node_modules/
 src/*.js
 dist/
 *.adoc
+!test-data/*.adoc
+
+.*
+!.gitignore
+!.reuse

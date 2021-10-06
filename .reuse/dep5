@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: khr-reflow-ts
+Upstream-Contact: Ryan Pavlik <ryan.pavlik@collabora.com>
+Source: https://github.com/rpavlik/khr-reflow-ts
+
+Files: test-data/*
+Copyright: 2016-2021, The Khronos Group Inc.
+License: CC-BY-4.0
+Comment: Extracted from/based on the OpenXR specification.
