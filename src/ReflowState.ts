@@ -140,7 +140,7 @@ export default class ReflowState {
             return this.para
         }
 
-        log.debug('reflowPara lead indent = ' + this.leadIndent +
+        log.debug('lead indent = ' + this.leadIndent +
             ' hangIndent = ' + this.hangIndent +
             ' para:' + this.para[0])
 
@@ -631,7 +631,7 @@ function getEndEscape(lineWords: string[]): "+" | null {
     return null;
 }
 function trimAndSplitLine(rawLine: string) {
-    let line = rawLine.trimEnd();
+    let line = rawLine.trim();
     return line.length > 0 ? line.split(/[ \t]/) : [];
 }
 
@@ -645,6 +645,7 @@ class OutLineBuffer {
         if (theIndent < 0) {
             throw new Error("Negative indent not allowed");
         }
+        this._indent = theIndent;
     }
 
     public get length() {
@@ -657,6 +658,7 @@ class OutLineBuffer {
 
 
     public get line() {
+        log.debug(`Returning line indented by ${this.indent}`);
         let indent = (this.indent > 0) ? ' '.repeat(this.indent) : '';
         return indent + this.outLineWords.join(' ');
     }
