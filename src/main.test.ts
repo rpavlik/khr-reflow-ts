@@ -80,7 +80,13 @@ test('box do no harm', () => {
 describe('box with simpler hanging indent', () => {
     const data = new TestData("preserve-hanging-indent");
     test('can combine while preserving the right hanging indent', () => {
-        const input = readInputData("preserve-hanging-indent");
+        expect(reflowLines(data.inputData(), null)).toEqual(data.expected);
+    });
+});
+
+describe('box with simpler, but unusual hanging indent', () => {
+    const data = new TestData("preserve-unusual-hanging-indent");
+    test('can reflow while preserving the unusual hanging indent', () => {
         expect(reflowLines(data.inputData(), null)).toEqual(data.expected);
     });
 });
