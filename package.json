@@ -13,7 +13,7 @@
     "url": "https://github.com/rpavlik/khr-reflow-ts"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.24",
+    "@types/jest": "^27.0.2",
     "@types/line-by-line": "^0.1.5",
     "@types/minimist": "^1.2.2",
     "@types/node": "^16.10.2",
