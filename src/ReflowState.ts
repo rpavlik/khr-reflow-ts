@@ -93,8 +93,8 @@ export default class ReflowState {
     // Line before the one we are processing
     private lastLine: string | null = null;
 
-    constructor(options: ReflowOptions | null) {
-        if (options !== null) {
+    public constructor(options?: ReflowOptions) {
+        if (options !== undefined) {
             this.margin = options.margin;
             this.breakPeriod = options.breakPeriod;
             this.reflow = options.reflow;
@@ -491,8 +491,13 @@ export default class ReflowState {
     }
 
     // Process a single line of input
-    processLine(line: string) {
-        this.incrLineNumber();
+    public processLine(line: string) {
+        this.processNumberedLine(line, this.lineNumber + 1);
+    }
+
+    // Process a single line of input for which you know the line number
+    public processNumberedLine(line: string, lineNumber: number) {
+        this.lineNumber = lineNumber;
 
         const trimmed = line.trimEnd();
         // Is this a title line (leading '= ' followed by text)?
@@ -585,10 +590,17 @@ export default class ReflowState {
 
     }
 
+    // Returns true if endInput() would essentially be a no-op.
+    public isBetweenParagraphs(): boolean {
+        return (this.para === null || this.para.length == 0) &&
+            this.blockStack.length == 1 &&
+            this.vuStack.length == 1;
+    }
+
     // Process all lines of a file or segment
     //
     // Calls endInput for you()
-    processLines(lines: string[]) {
+    public processLines(lines: string[]) {
         lines.forEach(line => {
             this.processLine(line);
         });
@@ -597,7 +609,7 @@ export default class ReflowState {
     }
 
     // Clean up after processing all lines of input.
-    endInput() {
+    public endInput() {
         // Cleanup at end of file
         this.endPara(null);
 
@@ -608,9 +620,15 @@ export default class ReflowState {
     }
 
     // Gets the output
-    getEmittedText(): string {
+    public getEmittedText(): string {
         return this.emittedText.join('');
     }
+
+    // Clear emitted text so we can use this incrementally.
+    public clearEmittedText() {
+        this.emittedText = [];
+    }
+
     private get paraBeginsWithBullet() {
         if (Regexes.beginBullet.test(this.para[0])) {
             return true;
