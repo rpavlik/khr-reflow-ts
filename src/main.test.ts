@@ -52,3 +52,15 @@ patch version number are packed into a 64-bit integer, referred to as
 basetype:XrVersion, as follows:
 `);
 });
+
+test('box do no harm', () => {
+    let bareInput =
+        String.raw`
+.Extension Name Formatting
+****
+* The prefix "code:XR_" to identify this as an OpenXR extension
+****
+`;
+    let input = stringToLines(bareInput);
+    expect(reflowLines(input, null)).toEqual(bareInput);
+});
