@@ -6,6 +6,9 @@
   "bin": {
     "khr-reflow": "lib/reflow-bin.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prepare": "yarn run build",
     "reflow": "ts-node src/reflow-bin.ts",

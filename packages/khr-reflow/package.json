@@ -11,6 +11,9 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint src --ext ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "Ryan Pavlik",
   "license": "Apache-2.0",
   "type": "module",
