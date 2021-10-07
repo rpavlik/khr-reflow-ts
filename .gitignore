@@ -12,3 +12,5 @@ src/*.js
 !.gitignore
 !.reuse
 !.eslintrc.json
+!.prettierrc
+!.*.license

@@ -8,6 +8,7 @@
     "reflow": "ts-node src/cli.ts",
     "test": "jest",
     "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint src --ext ts"
   },
   "author": "Ryan Pavlik",
@@ -25,6 +26,7 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "eslint": "^7.32.0",
+    "prettier": "^2.4.1",
     "ts-node": "^9.1.1",
     "typescript": "^4.4.3"
   },
