@@ -35,7 +35,6 @@ describe("endParaContinue", () => {
     expect("image:path_to_image[attributes]").toMatch(REGEXES.endParaContinue);
   });
   test("should not match these", () => {
-
     expect("path_to_image[attributes]").not.toMatch(REGEXES.endParaContinue);
     expect("abc").not.toMatch(REGEXES.endParaContinue);
     expect("1.").not.toMatch(REGEXES.endParaContinue);

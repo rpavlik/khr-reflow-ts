@@ -178,7 +178,7 @@ export default class ReflowState {
             } else {
               log.warn(
                 "reflowPara first line matches bullet point - single line, assuming hangIndent @ input line " +
-                this.lineNumber
+                  this.lineNumber
               );
               this.hangIndent = outLineBuf.length + 1;
             }
@@ -414,13 +414,13 @@ export default class ReflowState {
 
       log.debug(
         "endBlock reflow = " +
-        reflow +
-        " line " +
-        this.lineNumber +
-        ": pushing block start depth " +
-        this.blockStack.length +
-        ": " +
-        line
+          reflow +
+          " line " +
+          this.lineNumber +
+          ": pushing block start depth " +
+          this.blockStack.length +
+          ": " +
+          line
       );
     }
   }
