@@ -8,6 +8,8 @@ import ReflowState from "./ReflowState";
 import { createWriteStream } from "fs";
 import LineByLineReader from "line-by-line";
 
+export { ReflowOptions, ReflowState };
+
 export function stringToLines(input: string): string[] {
   const results = input.match(/(\n)|([^\n]+\n?)/gm);
   if (!results) {
