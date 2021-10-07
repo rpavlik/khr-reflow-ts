@@ -8,18 +8,19 @@ import ReflowOptions from "./ReflowOptions";
 
 var pkg = require("../package.json");
 
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 
 const defaultOptions = new ReflowOptions();
-const args = yargs(hideBin(process.argv))
+const args =
+  yargs(hideBin(process.argv))
     .options({
-        'input': { string: true, alias: 'i', normalize: true, nargs: 1, demandOption: true, desc: 'Input filename'},
-        'output': { string: true, alias: 'O', normalize: true, nargs: 1, desc: 'Output filename', conflicts: 'overwrite' },
-        'no-break-period': { boolean: true, desc: 'Do not break to a new line after the end of a sentence' },
-        'no-reflow': { boolean: true, desc: 'Do not reflow to width' },
-        'margin': { number: true, default: defaultOptions.margin, desc: 'Maximum width for wrapping' },
-        'overwrite': { boolean: true, alias: 'o', desc: 'Overwrite the input file with the processed output' },
+      input: { string: true, alias: "i", normalize: true, nargs: 1, demandOption: true, desc: "Input filename" },
+      output: { string: true, alias: "O", normalize: true, nargs: 1, desc: "Output filename", conflicts: "overwrite" },
+      "no-break-period": { boolean: true, desc: "Do not break to a new line after the end of a sentence" },
+      "no-reflow": { boolean: true, desc: "Do not reflow to width" },
+      margin: { number: true, default: defaultOptions.margin, desc: "Maximum width for wrapping" },
+      overwrite: { boolean: true, alias: "o", desc: "Overwrite the input file with the processed output" },
     })
     // .demandCommand(1, "Must provide an input filename")
     // .check((args, options) => {
@@ -30,14 +31,7 @@ const args = yargs(hideBin(process.argv))
     // })
     .version()
     // .usage('Usage: $0 <input_file> [<output_file>] [options]')
-    .help()
-    // .command('$0 <input> [<output>]', 'Reflow AsciiDoctor files as Khronos does', (yargs) => {
-    //     yargs
-    //         .positional('input', { demandOption: true, type: 'string', desc: 'Input filename' })
-    //         .positional('output', { demandOption: false, type: 'string', desc: 'Output filename' })
-    // })
-    .argv;
-
+    .help().argv;
 
 // let args = parseArgs(process.argv.slice(2), {
 //         alias: {
@@ -79,9 +73,9 @@ let input: string = args.input;
 
 let output: string | null = null;
 if (args.output != null) {
-    output = args.output;
+  output = args.output;
 } else if (args.overwrite) {
-    output = input;
+  output = input;
 }
 let options = new ReflowOptions();
 
@@ -90,13 +84,11 @@ options.margin = args.margin;
 options.reflow = !args["no-reflow"];
 console.log(options);
 
-
 if (output === null) {
-    console.log(`Reflowing ${input} to stdout`);
-    let result = reflowFile(input, options);
-    process.stdout.write(result);
+  console.log(`Reflowing ${input} to stdout`);
+  let result = reflowFile(input, options);
+  process.stdout.write(result);
 } else {
-    console.log(`Reflowing ${input} to ${output}`);
-    reflowFileToFile(input, output, options);
+  console.log(`Reflowing ${input} to ${output}`);
+  reflowFileToFile(input, output, options);
 }
-
