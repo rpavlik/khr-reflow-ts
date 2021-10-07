@@ -13,4 +13,5 @@ src/*.js
 !.reuse
 !.eslintrc.json
 !.prettierrc
+!.editorconfig
 !.*.license
