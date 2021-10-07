@@ -22,7 +22,7 @@ export const REGEXES = {
   // conventions (conventions.file_suffix), except that XR uses '.txt' for
   // generated API include files, not '.adoc' like its other includes.
   includePat:
-    /include::(?<directory_traverse>((..\/){1,4}|\{INCS-VAR\}\/|\{generated\}\/)(generated\/)?)(?<generated_type>[\w]+)\/(?<category>\w+)\/(?<entity_name>[^./]+).txt[\[][\]]/,
+    /include::(?<directory_traverse>((..\/){1,4}|\{INCS-VAR\}\/|\{generated\}\/)(generated\/)?)(?<generated_type>[\w]+)\/(?<category>\w+)\/(?<entity_name>[^./]+).txt[[][\]]/,
 
   // Find the first pname: pattern in a Valid Usage statement
   pnamePat: /pname:(?<param>\w+)/,
