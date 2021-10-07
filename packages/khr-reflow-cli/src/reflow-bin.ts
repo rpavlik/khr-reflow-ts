@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-import { reflowFile, ReflowOptions, reflowFileToFile } from "@ryan.pavlik/khr-reflow-ts";
+import { reflowFile, ReflowOptions, reflowFileToFile } from "@ryan.pavlik/khr-reflow";
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";

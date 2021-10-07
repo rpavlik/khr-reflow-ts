@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: CC0-1.0
 
 node_modules/
-/dist/
 lib/
+
+lerna-debug.log
+
 *.adoc
-!test-data/*.adoc
+!packages/khr-reflow/test-data/*.adoc
 
 .*
 !.gitignore
