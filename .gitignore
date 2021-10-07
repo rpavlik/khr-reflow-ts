@@ -5,6 +5,7 @@ node_modules/
 lib/
 
 lerna-debug.log
+*.tgz
 
 *.adoc
 !packages/khr-reflow/test-data/*.adoc
