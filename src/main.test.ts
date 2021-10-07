@@ -38,27 +38,27 @@ class TestData {
 }
 
 test("first do no harm", () => {
-  let bareInput = `This is a first line.
+  const bareInput = `This is a first line.
 `;
-  let input = stringToLines(bareInput);
+  const input = stringToLines(bareInput);
   expect(input).toHaveLength(1);
   expect(input[0]).toMatch(/\n$/m);
   expect(reflowLines(input, null)).toEqual(input.join(""));
 });
 
 test("first do no harm 2", () => {
-  let bareInput = `This is a first line.
+  const bareInput = `This is a first line.
 This is a second.
 `;
-  let input = stringToLines(bareInput);
+  const input = stringToLines(bareInput);
   expect(reflowLines(input, null)).toEqual(bareInput);
 });
 
 test("normal paragraph", () => {
-  let bareInput = `In each such use, the API major version number, minor version number, and patch version number are packed into a 64-bit integer, referred to as
+  const bareInput = `In each such use, the API major version number, minor version number, and patch version number are packed into a 64-bit integer, referred to as
 basetype:XrVersion, as follows:
 `;
-  let input = stringToLines(bareInput);
+  const input = stringToLines(bareInput);
   expect(reflowLines(input, null))
     .toEqual(String.raw`In each such use, the API major version number, minor version number, and
 patch version number are packed into a 64-bit integer, referred to as
@@ -67,13 +67,13 @@ basetype:XrVersion, as follows:
 });
 
 test("box do no harm", () => {
-  let bareInput = String.raw`
+  const bareInput = String.raw`
 .Extension Name Formatting
 ****
 * The prefix "code:XR_" to identify this as an OpenXR extension
 ****
 `;
-  let input = stringToLines(bareInput);
+  const input = stringToLines(bareInput);
   expect(reflowLines(input, null)).toEqual(bareInput);
 });
 

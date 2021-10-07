@@ -10,7 +10,7 @@ lib/
 .*
 !.gitignore
 !.reuse
-!.eslintrc.json
+!.eslintrc.js
 !.prettierrc
 !.editorconfig
 !.*.license

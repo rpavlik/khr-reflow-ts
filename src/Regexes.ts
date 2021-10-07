@@ -71,8 +71,8 @@ export const REGEXES = {
   // Explicit Valid Usage list item with one or more leading asterisks
   // The dotAll (s) is needed to prevent vuPat.exec() from stripping
   // the trailing newline.
-  vuPat: /^(?<head>  [*]+)( *)(?<tail>.*)/s,
+  vuPat: /^(?<head> {2}[*]+)( *)(?<tail>.*)/s,
 
   // Pattern matching leading nested bullet points
-  nestedVuPat: /^  \*\*/,
+  nestedVuPat: /^ {2}\*\*/,
 };

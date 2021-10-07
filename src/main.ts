@@ -20,7 +20,7 @@ export function stringToLines(input: string): string[] {
 }
 
 export function reflowLines(lines: string[], options?: ReflowOptions | null | undefined): string {
-  let state = new ReflowState(options === null ? undefined : options);
+  const state = new ReflowState(options === null ? undefined : options);
   state.processLines(lines);
   return state.getEmittedText();
 }
@@ -29,9 +29,9 @@ export function reflowFile(
   filename: string,
   options: ReflowOptions | null = null,
   cb: null | ((emitted: string) => void) = null
-) {
-  let state = new ReflowState(options === null ? undefined : options);
-  let reader = new LineByLineReader(filename, { encoding: "utf8" });
+): string {
+  const state = new ReflowState(options === null ? undefined : options);
+  const reader = new LineByLineReader(filename, { encoding: "utf8" });
   // let input = createReadStream(filename, {encoding: 'utf-8'});
   // let reader = readline.createInterface({input: input});
   reader.on("line", (line: string) => {
@@ -50,9 +50,9 @@ export function reflowFile(
   return state.getEmittedText();
 }
 
-export function reflowFileToFile(filename: string, outFilename: string, options: ReflowOptions | null) {
+export function reflowFileToFile(filename: string, outFilename: string, options: ReflowOptions | null): void {
   reflowFile(filename, options, (emitted) => {
-    let stream = createWriteStream(outFilename, "utf-8");
+    const stream = createWriteStream(outFilename, "utf-8");
     stream.write(emitted, () => {
       stream.end();
     });

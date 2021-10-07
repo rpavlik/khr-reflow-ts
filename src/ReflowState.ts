@@ -14,16 +14,9 @@ const blockCommonReflow = "// Common Valid Usage\n";
 
 type BlockStackElement = string | null;
 
-function truthyString(s: string | null) {
-  if (s === null) {
-    return false;
-  }
-  return s.trim().length > 0;
-}
-
 // Returns whether oldname and newname match, up to an API suffix.
 function apiMatch(oldname: string, newname: string): boolean {
-  let trailingUpper = /[A-Z]+$/;
+  const trailingUpper = /[A-Z]+$/;
   return oldname.replace(trailingUpper, "") === newname.replace(trailingUpper, "");
 }
 
@@ -47,7 +40,7 @@ export default class ReflowState {
 
   // true if the previous line was a document title line
   // (e.g. :leveloffset: 0 - no attempt to track changes to this is made).
-  lastTitle: boolean = false;
+  lastTitle = false;
 
   // indent level (in spaces) of the first line of a paragraph.
   private leadIndent = 0;
@@ -60,19 +53,19 @@ export default class ReflowState {
 
   // true if justification should break to a new line after
   // something that appears to be an initial in someone's name. **TBD**
-  breakInitial: boolean = true;
+  breakInitial = true;
 
   // Prefix of generated Valid Usage tags
-  private vuPrefix: string = "VUID";
+  private vuPrefix = "VUID";
 
   // margin to reflow text to.
-  margin: number = 76;
+  margin = 76;
 
   // true if justification should break to a new line after the end of a sentence.
-  breakPeriod: boolean = true;
+  breakPeriod = true;
 
   // true if text should be reflowed, false to pass through unchanged.
-  reflow: boolean = true;
+  reflow = true;
 
   // Integer to start tagging un-numbered Valid Usage statements with,
   // or null if no tagging should be done.
@@ -143,22 +136,22 @@ export default class ReflowState {
 
     // Tracks the *previous* word processed. It must not be empty.
     let prevWord = " ";
-    let outLineBuf = new OutLineBuffer();
+    const outLineBuf = new OutLineBuffer();
     let outPara: string[] = [];
     for (const rawLine of this.para) {
       // let line = rawLine.trimEnd();
       // let words = line.length > 0 ? line.split(/[ \t]/) : [];
-      let words = trimAndSplitLine(rawLine);
+      const words = trimAndSplitLine(rawLine);
 
       // log.debug('reflowPara: input line =', line)
-      let numWords = words.length - 1;
+      const numWords = words.length - 1;
 
       // Trailing ' +' must stay on the same line
-      let endEscapeLine = getEndEscape(words);
+      const endEscapeLine = getEndEscape(words);
       const bulletPoint = this.paraBeginsWithBullet;
 
       for (const [i, word] of words.entries()) {
-        let wordLen = word.length;
+        const wordLen = word.length;
         paragraphWordCount += 1;
 
         const isLastWordOfLine = i === numWords;
@@ -185,7 +178,7 @@ export default class ReflowState {
             } else {
               log.warn(
                 "reflowPara first line matches bullet point - single line, assuming hangIndent @ input line " +
-                  this.lineNumber
+                this.lineNumber
               );
               this.hangIndent = outLineBuf.length + 1;
             }
@@ -281,7 +274,7 @@ export default class ReflowState {
   // Resets the paragraph accumulator.
   private emitPara() {
     if (this.para.length > 0) {
-      let nextvu = this.nextvu;
+      const nextvu = this.nextvu;
       if (this.vuStack[this.vuStack.length - 1] && nextvu !== null) {
         // If:
         //   - this paragraph is in a Valid Usage block,
@@ -300,31 +293,31 @@ export default class ReflowState {
           // Then add a VUID tag starting with the next free ID.
 
           // Split the first line after the bullet point
-          let matches = this.para[0].match(REGEXES.vuPat);
+          const matches = this.para[0].match(REGEXES.vuPat);
           if (matches !== null && matches.groups !== null && matches.groups !== undefined) {
             log.debug("findRefs: Matched vuPat on line: " + this.para[0]);
-            let head = matches.groups["head"];
-            let tail = matches.groups["tail"];
+            const head = matches.groups["head"];
+            const tail = matches.groups["tail"];
 
             // Use the first pname: statement in the paragraph as
             // the parameter name in the VUID tag. This won't always
             // be correct, but should be highly reliable.
             let vuLineMatch: RegExpMatchArray | null = null;
-            for (let vuLine in this.para) {
+            for (const vuLine in this.para) {
               vuLineMatch = vuLine.match(REGEXES.pnamePat);
               if (vuLineMatch !== null) {
                 break;
               }
             }
-            let paramName: string = "None";
+            let paramName = "None";
             if (vuLineMatch !== null && vuLineMatch.groups !== null && vuLineMatch.groups !== undefined) {
               paramName = vuLineMatch.groups["param"];
             } else {
               log.warn("No param name found for VUID tag on line: " + this.para[0]);
             }
 
-            let paddedNum = nextvu.toString().padStart(5, "0");
-            let newline = `${head} [[${this.vuPrefix}-${this.apiName}-${paramName}-${paddedNum}]] ${tail}`;
+            const paddedNum = nextvu.toString().padStart(5, "0");
+            const newline = `${head} [[${this.vuPrefix}-${this.apiName}-${paramName}-${paddedNum}]] ${tail}`;
             log.info(`Assigning ${this.vuPrefix} ${this.apiName} ${nextvu}  on line: ${this.para[0]} -> ${newline}`);
 
             this.para[0] = newline;
@@ -421,13 +414,13 @@ export default class ReflowState {
 
       log.debug(
         "endBlock reflow = " +
-          reflow +
-          " line " +
-          this.lineNumber +
-          ": pushing block start depth " +
-          this.blockStack.length +
-          ": " +
-          line
+        reflow +
+        " line " +
+        this.lineNumber +
+        ": pushing block start depth " +
+        this.blockStack.length +
+        ": " +
+        line
       );
     }
   }
@@ -435,7 +428,7 @@ export default class ReflowState {
   // reformatted (e.g. a NOTE).
   private endParaBlockReflow(line: string, vuBlock: boolean) {
     // def endParaBlockReflow(this, line, vuBlock):
-    this.endBlock(line, true, (vuBlock = vuBlock));
+    this.endBlock(line, true, vuBlock);
   }
 
   // 'line' begins or ends a block. The paragraphs in the block should
@@ -458,8 +451,8 @@ export default class ReflowState {
   private addLine(line: string) {
     log.debug("addLine line " + this.lineNumber + ": " + line);
 
-    let lineNoNewline = line.trimEnd();
-    let indent = lineNoNewline.length - lineNoNewline.trimStart().length;
+    const lineNoNewline = line.trimEnd();
+    const indent = lineNoNewline.length - lineNoNewline.trimStart().length;
 
     // A hanging paragraph ends due to a less-indented line.
     if (this.para.length > 0 && indent < this.hangIndent) {
@@ -489,12 +482,12 @@ export default class ReflowState {
   }
 
   // Process a single line of input
-  public processLine(line: string) {
+  public processLine(line: string): void {
     this.processNumberedLine(line, this.lineNumber + 1);
   }
 
   // Process a single line of input for which you know the line number
-  public processNumberedLine(line: string, lineNumber: number) {
+  public processNumberedLine(line: string, lineNumber: number): void {
     this.lineNumber = lineNumber;
 
     const trimmed = line.trimEnd();
@@ -519,7 +512,7 @@ export default class ReflowState {
       // Blocks cannot be nested.
 
       // Is this is an explicit Valid Usage block?
-      let vuBlock = this.lineNumber > 1 && this.lastLine === ".Valid Usage\n";
+      const vuBlock = this.lineNumber > 1 && this.lastLine === ".Valid Usage\n";
 
       this.endParaBlockReflow(line, vuBlock);
     } else if (REGEXES.endPara.test(trimmed)) {
@@ -531,13 +524,13 @@ export default class ReflowState {
       // If this is an include:: line starting the definition of a
       // structure or command, track that for use in VUID generation.
 
-      let matches = line.match(REGEXES.includePat);
+      const matches = line.match(REGEXES.includePat);
       if (matches && matches.groups) {
         //         if matches is not None:
-        let generatedType = matches.groups["generated_type"];
-        let includeType = matches.groups["category"];
+        const generatedType = matches.groups["generated_type"];
+        const includeType = matches.groups["category"];
         if (generatedType === "api" && (includeType === "protos" || includeType === "structs")) {
-          let apiName = matches.groups["entity_name"];
+          const apiName = matches.groups["entity_name"];
           if (this.apiName !== "" && this.apiName !== null) {
             // This happens when there are multiple API include
             // lines in a single block. The style guideline is to
@@ -593,7 +586,7 @@ export default class ReflowState {
   // Process all lines of a file or segment
   //
   // Calls endInput for you()
-  public processLines(lines: string[]) {
+  public processLines(lines: string[]): void {
     lines.forEach((line) => {
       this.processLine(line);
     });
@@ -602,7 +595,7 @@ export default class ReflowState {
   }
 
   // Clean up after processing all lines of input.
-  public endInput() {
+  public endInput(): void {
     // Cleanup at end of file
     this.endPara(null);
 
@@ -618,7 +611,7 @@ export default class ReflowState {
   }
 
   // Clear emitted text so we can use this incrementally.
-  public clearEmittedText() {
+  public clearEmittedText(): void {
     this.emittedText = [];
   }
 
@@ -640,13 +633,13 @@ function getEndEscape(lineWords: string[]): "+" | null {
   return null;
 }
 function trimAndSplitLine(rawLine: string) {
-  let line = rawLine.trim();
+  const line = rawLine.trim();
   return line.length > 0 ? line.split(/[ \t]/) : [];
 }
 
 class OutLineBuffer {
   private outLineWords: string[] = [];
-  private _indent: number = 0;
+  private _indent = 0;
   public get indent() {
     return this._indent;
   }
@@ -675,7 +668,7 @@ class OutLineBuffer {
 
   public get line() {
     log.debug(`Returning line indented by ${this.indent}`);
-    let indent = this.indent > 0 ? " ".repeat(this.indent) : "";
+    const indent = this.indent > 0 ? " ".repeat(this.indent) : "";
     return indent + this.outLineWords.join(" ");
   }
   public isEmpty() {
