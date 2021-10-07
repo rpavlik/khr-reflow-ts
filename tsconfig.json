@@ -3,6 +3,8 @@
     // "rootDir": "src",
     "outDir": "lib",
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "target": "ES5",
     "module": "CommonJS",
     "moduleResolution": "node",
