@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2021, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
-node_modules/
+/node_modules/
 src/*.js
-dist/
+/dist/
+/lib/
 *.adoc
 !test-data/*.adoc
 
