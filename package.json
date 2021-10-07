@@ -5,7 +5,6 @@
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
   "scripts": {
-    "reflow": "ts-node src/cli.ts",
     "test": "jest",
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -20,9 +19,7 @@
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "@types/line-by-line": "^0.1.5",
-    "@types/minimist": "^1.2.2",
     "@types/node": "^16.10.2",
-    "@types/yargs": "^16.0.4",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "eslint": "^7.32.0",
@@ -32,10 +29,8 @@
   },
   "dependencies": {
     "line-by-line": "^0.1.6",
-    "minimist": "^1.2.5",
     "tslog": "^3.2.2",
     "jest": "^27.2.4",
-    "ts-jest": "^27.0.5",
-    "yargs": "^16.2.0"
+    "ts-jest": "^27.0.5"
   }
 }
