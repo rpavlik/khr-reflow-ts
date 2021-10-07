@@ -1,6 +1,6 @@
 {
   "name": "@ryan.pavlik/khr-reflow-cli",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "description": "Command line tool for performing AsciiDoc reflow.",
   "types": "lib/reflow-bin.d.ts",
   "bin": {
