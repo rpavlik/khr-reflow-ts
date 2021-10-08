@@ -1,9 +1,13 @@
 {
   "name": "root",
   "private": "true",
-  "version": "1.9.0",
   "author": "Ryan Pavlik",
   "license": "Apache-2.0",
+  "scripts": {
+    "build": "yarn && lerna run build",
+    "format": "lerna run format",
+    "lint": "lerna run lint"
+  },
   "workspaces": [
     "packages/*"
   ],
