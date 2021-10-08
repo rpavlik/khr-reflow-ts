@@ -583,10 +583,23 @@ export default class ReflowState {
     return (this.para === null || this.para.length === 0) && this.blockStack.length === 1 && this.vuStack.length === 1;
   }
 
-  // Process all lines of a file or segment
-  //
-  // Calls endInput for you()
+  /**
+  * Process all lines of a file or segment
+  *
+  * Calls endInput for you()
+  *
+  * @deprecated Use processLinesAndEndInput() instead.
+  */
   public processLines(lines: string[]): void {
+    this.processLinesAndEndInput(lines);
+  }
+
+  /**
+  * Process all lines of a file or segment
+  *
+  * Calls endInput for you()
+  */
+  public processLinesAndEndInput(lines: string[]): void {
     for (const line of lines) {
       this.processLine(line);
     }
