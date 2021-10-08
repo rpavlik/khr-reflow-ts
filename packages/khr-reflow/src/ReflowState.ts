@@ -610,6 +610,11 @@ export default class ReflowState {
     return this.emittedText.join("");
   }
 
+  // Gets the output lines.
+  public getEmittedLines(): string[] {
+    return this.emittedText;
+  }
+
   // Clear emitted text so we can use this incrementally.
   public clearEmittedText(): void {
     this.emittedText = [];
