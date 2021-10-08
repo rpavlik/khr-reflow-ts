@@ -10,6 +10,11 @@ import LineByLineReader from "line-by-line";
 
 export { ReflowOptions, ReflowState };
 
+/**
+ * Split a string into an array of lines with trailing line ending
+ * @param input Text string
+ * @returns array of lines, each with their own trailing line ending
+ */
 export function stringToLines(input: string): string[] {
   const results = input.match(/(\n)|([^\n]+\n?)/gm);
   if (!results) {
@@ -19,12 +24,27 @@ export function stringToLines(input: string): string[] {
   }
 }
 
+/**
+ * Reflow an array of lines, return a reflowed string.
+ *
+ * @param lines array of lines, each with their own trailing line ending
+ * @param options any non-default configuration
+ * @returns reflowed text in a single string
+ */
 export function reflowLines(lines: string[], options?: ReflowOptions | null | undefined): string {
   const state = new ReflowState(options === null ? undefined : options);
   state.processLinesAndEndInput(lines);
   return state.getEmittedText();
 }
 
+/**
+ * Reflow the contents of a file.
+ *
+ * @param filename Filename to process.
+ * @param options any non-default configuration
+ * @param cb Optional callback called with emitted text
+ * @returns Reflowed text
+ */
 export function reflowFile(
   filename: string,
   options: ReflowOptions | null = null,
@@ -32,8 +52,6 @@ export function reflowFile(
 ): string {
   const state = new ReflowState(options === null ? undefined : options);
   const reader = new LineByLineReader(filename, { encoding: "utf8" });
-  // let input = createReadStream(filename, {encoding: 'utf-8'});
-  // let reader = readline.createInterface({input: input});
   reader.on("line", (line: string) => {
     state.processLine(line + "\n");
   });
@@ -43,13 +61,16 @@ export function reflowFile(
       cb(state.getEmittedText());
     }
   });
-  // readInterface.question
-  // // reader.
-  // state.endInput();
-  // input.close();
   return state.getEmittedText();
 }
 
+/**
+ * Reflow the contents of a file to a file.
+ *
+ * @param filename Filename to process.
+ * @param outFilename Filename to write.
+ * @param options any non-default configuration
+ */
 export function reflowFileToFile(filename: string, outFilename: string, options: ReflowOptions | null): void {
   reflowFile(filename, options, (emitted) => {
     const stream = createWriteStream(outFilename, "utf-8");

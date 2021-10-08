@@ -3,20 +3,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+/**
+ * Configuration for the reflow engine.
+ */
 export default class ReflowOptions {
-  // margin to reflow text to.
+  /** margin to reflow text to. */
   margin = 76;
 
-  // true if justification should break to a new line after the end of a sentence.
+  /** true if justification should break to a new line after the end of a sentence. */
   breakPeriod = true;
 
-  // true if text should be reflowed, false to pass through unchanged.
+  /** true if text should be reflowed, false to pass through unchanged. */
   reflow = true;
 
-  // Integer to start tagging un-numbered Valid Usage statements with,
-  // or null if no tagging should be done.
+  /** Integer to start tagging un-numbered Valid Usage statements with, or null if no tagging should be done. */
   nextvu: number | null = null;
 
-  // Line number to start at
+  /** Line number to start at */
   initialLineNumber = 1;
 }

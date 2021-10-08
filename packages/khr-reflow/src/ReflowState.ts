@@ -55,7 +55,7 @@ export default class ReflowState {
    * true if the previous line was a document title line
    * (e.g. :leveloffset: 0 - no attempt to track changes to this is made).
    */
-  lastTitle = false;
+  private lastTitle = false;
 
   /** indent level (in spaces) of the first line of a paragraph. */
   private leadIndent = 0;
@@ -64,31 +64,31 @@ export default class ReflowState {
   private hangIndent = 0;
 
   /** line number being read from the input file. */
-  lineNumber = 0;
+  private lineNumber = 0;
 
   /**
    * true if justification should break to a new line after something
    * that appears to be an initial in someone's name. **TBD**
    * */
-  breakInitial = true;
+  private breakInitial = true;
 
   /** Prefix of generated Valid Usage tags */
   private vuPrefix = "VUID";
 
   /** margin to reflow text to. */
-  margin = 76;
+  private margin = 76;
 
   /**  true if justification should break to a new line after the end of a sentence. */
-  breakPeriod = true;
+  private breakPeriod = true;
 
   /**  true if text should be reflowed, false to pass through unchanged.*/
-  reflow = true;
+  private reflow = true;
 
   /**
    * Integer to start tagging un-numbered Valid Usage statements with,
    * or null if no tagging should be done.
    */
-  nextvu: number | null = null;
+  private nextvu: number | null = null;
 
   /**
    * String name of a Vulkan structure or command for VUID tag generation, or null if one hasn't been included in this file yet.
@@ -310,10 +310,10 @@ export default class ReflowState {
         // Try to assign VUIDs
 
         if (REGEXES.nestedVuPat.test(this.para[0])) {
-          //                 // Check for nested bullet points. These should not be
-          //                 // assigned VUIDs, nor present at all, because they break
-          //                 // the VU extractor.
-          //                 log.warn(this.filename + ': Invalid nested bullet point in VU block: '+ this.para[0])
+          // Check for nested bullet points. These should not be
+          // assigned VUIDs, nor present at all, because they break
+          // the VU extractor.
+          // log.warn(this.filename + ": Invalid nested bullet point in VU block: " + this.para[0]);
         } else if (this.para[0].search(this.vuPrefix) === -1) {
           // If:
           //   - a tag is not already present, and
@@ -352,13 +352,6 @@ export default class ReflowState {
             this.nextvu = nextvu + 1;
           }
         }
-
-        // else:
-        //     There are only a few cases of this, and they're all
-        //     legitimate. Leave detecting this case to another tool
-        //     or hand inspection.
-        //     log.warn(this.filename + ': Unexpected non-bullet item in VU block (harmless if following an ifdef):',
-        //             this.para[0])
       }
       if (this.reflowStack[this.reflowStack.length - 1]) {
         this.printLines(this.reflowPara());
@@ -379,15 +372,9 @@ export default class ReflowState {
 
   /** Print an array of lines with newlines already present */
   private printLines(lines: string[]) {
-    /// TODO
-    lines.forEach((line) => {
+    for (const line of lines) {
       this.emittedText.push(line);
-      // if (line.endsWith('\n')) {
-      //     console.log(line.slice(0, -1));
-      // } else {
-      //     console.log(line);
-      // }
-    });
+    }
   }
 
   /**
@@ -416,8 +403,6 @@ export default class ReflowState {
     this.endPara(line);
   }
 
-  /** */
-
   /**
    * 'line' begins or ends a block.
    *
@@ -426,8 +411,6 @@ export default class ReflowState {
    * @param vuBlock whether or not this is a valid usage block
    */
   private endBlock(line: string, reflow = false, vuBlock = false): void {
-    // def endBlock(this, line, reflow = false, vuBlock = false):
-
     // If beginning a block, tag whether or not to reflow the contents.
 
     // vuBlock is true if the previous line indicates this is a Valid Usage block.
