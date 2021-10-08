@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-export const REGEXES = {
+const REFLOW_REGEXES = {
   // Markup that always ends a paragraph
   //   empty line or whitespace
   //   [block options]
@@ -14,7 +14,7 @@ export const REGEXES = {
   //   macrodirective::terms
   //   +                   standalone list item continuation
   //   label::             labelled list - label must be standalone
-  endPara: /^( *|\[.*\]|\/\/.*|<<<<|:.*|[a-z]+::.*|\+|.*::)$/,
+  endPara: /^( *|\[.*\]|\/\/.*|<<<<|:.*|[a-z]+::.*|\+|.*::)$/.compile(),
 
   // Special case of markup ending a paragraph, used to track the current
   // command/structure. This allows for either OpenXR or Vulkan API path
@@ -22,23 +22,23 @@ export const REGEXES = {
   // conventions (conventions.file_suffix), except that XR uses '.txt' for
   // generated API include files, not '.adoc' like its other includes.
   includePat:
-    /include::(?<directory_traverse>((..\/){1,4}|\{INCS-VAR\}\/|\{generated\}\/)(generated\/)?)(?<generated_type>[\w]+)\/(?<category>\w+)\/(?<entity_name>[^./]+).txt[[][\]]/,
+    /include::(?<directory_traverse>((..\/){1,4}|\{INCS-VAR\}\/|\{generated\}\/)(generated\/)?)(?<generated_type>[\w]+)\/(?<category>\w+)\/(?<entity_name>[^./]+).txt[[][\]]/.compile(),
 
   // Find the first pname: pattern in a Valid Usage statement
-  pnamePat: /pname:(?<param>\w+)/,
+  pnamePat: /pname:(?<param>\w+)/.compile(),
 
   // Markup that's OK in a contiguous paragraph but otherwise passed through
   //   .anything
   //   === Section Titles
   //   image::path_to_image[attributes]  (apparently a single colon is OK but less idiomatic)
-  endParaContinue: /^(\..*)|(=+ .+)|(image:.*\[.*\])$/,
+  endParaContinue: /^(\..*)|(=+ .+)|(image:.*\[.*\])$/.compile(),
 
   // Markup for block delimiters whose contents *should* be reformatted
   //   --   (exactly two)  (open block)
   //   **** (4 or more)    (sidebar block - works best/only? in AsciiDoctor 2)
   //   ==== (4 or more)    (example block)
   //   ____ (4 or more)    (quote block)
-  blockReflow: /^(--|[*=_]{4,})$/,
+  blockReflow: /^(--|[*=_]{4,})$/.compile(),
 
   // Markup for block delimiters whose contents should *not* be reformatted
   //   |=== (3 or more)  (table)
@@ -47,7 +47,7 @@ export const REGEXES = {
   //   //// (4 or more)  (comment block)
   //   ---- (4 or more)  (listing block)
   //   ```  (exactly 3)  (listing block)
-  blockPassthrough: /^(\|={3,}|[`]{3}|[-.+/]{4,})$/,
+  blockPassthrough: /^(\|={3,}|[`]{3}|[-.+/]{4,})$/.compile(),
 
   // Markup for introducing lists (hanging paragraphs)
   //   * bullet
@@ -58,21 +58,23 @@ export const REGEXES = {
   //   {empty}:: bullet
   //   1. list item
   //   <1> source listing callout
-  beginBullet: /^ *([-*.]+|\{empty\}::|::|[0-9]+[.]|<([0-9]+)>) /,
+  beginBullet: /^ *([-*.]+|\{empty\}::|::|[0-9]+[.]|<([0-9]+)>) /.compile(),
 
   // Text that (may) not end sentences
 
   // A single letter followed by a period, typically a middle initial.
-  endInitial: /^[A-Z]\.$/,
+  endInitial: /^[A-Z]\.$/.compile(),
 
   // An abbreviation, which doesn't (usually) end a line.
-  endAbbrev: /(e\.g|i\.e|c\.f)\.$/i,
+  endAbbrev: /(e\.g|i\.e|c\.f)\.$/i.compile(),
 
   // Explicit Valid Usage list item with one or more leading asterisks
   // The dotAll (s) is needed to prevent vuPat.exec() from stripping
   // the trailing newline.
-  vuPat: /^(?<head> {2}[*]+)( *)(?<tail>.*)/s,
+  vuPat: /^(?<head> {2}[*]+)( *)(?<tail>.*)/s.compile(),
 
   // Pattern matching leading nested bullet points
-  nestedVuPat: /^ {2}\*\*/,
+  nestedVuPat: /^ {2}\*\*/.compile(),
 };
+
+export default REFLOW_REGEXES;
