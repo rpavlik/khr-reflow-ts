@@ -587,9 +587,9 @@ export default class ReflowState {
   //
   // Calls endInput for you()
   public processLines(lines: string[]): void {
-    lines.forEach((line) => {
+    for (const line of lines) {
       this.processLine(line);
-    });
+    }
 
     this.endInput();
   }
