@@ -21,64 +21,79 @@ function apiMatch(oldname: string, newname: string): boolean {
 }
 
 export default class ReflowState {
-  // The last element is a line with the asciidoc block delimiter that's currently in effect,
-  // such as '--', '----', '****', '======', or '+++++++++'.
-  // This affects whether or not the block contents should be formatted.
+  /**
+   * The last element is a line with the asciidoc block delimiter that's currently in effect,
+   * such as '--', '----', '****', '======', or '+++++++++'.
+   * This affects whether or not the block contents should be formatted.
+   */
   private blockStack: BlockStackElement[] = [null];
 
-  // The last element is true or false if the current blockStack contents
-  // should be reflowed.
+  /**
+   * The last element is true or false if the current blockStack contents
+   * should be reflowed.
+   */
   private reflowStack: boolean[] = [true];
 
-  // the last element is true or false if the current blockStack contents
-  // are an explicit Valid Usage block.
+  /**
+   * the last element is true or false if the current blockStack contents
+   * are an explicit Valid Usage block.
+   */
   private vuStack: boolean[] = [false];
 
-  // list of lines in the paragraph being accumulated.
-  // When this is non-empty, there is a current paragraph.
+  /**
+   * list of lines in the paragraph being accumulated.
+   * When this is non-empty, there is a current paragraph.
+   */
   private para: string[] = [];
 
-  // true if the previous line was a document title line
-  // (e.g. :leveloffset: 0 - no attempt to track changes to this is made).
+  /**
+   * true if the previous line was a document title line
+   * (e.g. :leveloffset: 0 - no attempt to track changes to this is made).
+   */
   lastTitle = false;
 
-  // indent level (in spaces) of the first line of a paragraph.
+  /** indent level (in spaces) of the first line of a paragraph. */
   private leadIndent = 0;
 
-  // indent level of the remaining lines of a paragraph.
+  /** indent level of the remaining lines of a paragraph. */
   private hangIndent = 0;
 
-  // line number being read from the input file.
+  /** line number being read from the input file. */
   lineNumber = 0;
 
-  // true if justification should break to a new line after
-  // something that appears to be an initial in someone's name. **TBD**
+  /**
+   * true if justification should break to a new line after something
+   * that appears to be an initial in someone's name. **TBD**
+   * */
   breakInitial = true;
 
-  // Prefix of generated Valid Usage tags
+  /** Prefix of generated Valid Usage tags */
   private vuPrefix = "VUID";
 
-  // margin to reflow text to.
+  /** margin to reflow text to. */
   margin = 76;
 
-  // true if justification should break to a new line after the end of a sentence.
+  /**  true if justification should break to a new line after the end of a sentence. */
   breakPeriod = true;
 
-  // true if text should be reflowed, false to pass through unchanged.
+  /**  true if text should be reflowed, false to pass through unchanged.*/
   reflow = true;
 
-  // Integer to start tagging un-numbered Valid Usage statements with,
-  // or null if no tagging should be done.
+  /**
+   * Integer to start tagging un-numbered Valid Usage statements with,
+   * or null if no tagging should be done.
+   */
   nextvu: number | null = null;
 
-  // String name of a Vulkan structure or command for VUID tag generation,
-  // or null if one hasn't been included in this file yet.
+  /**
+   * String name of a Vulkan structure or command for VUID tag generation, or null if one hasn't been included in this file yet.
+   */
   private apiName: string | null = null;
 
-  // All strings that get passed to printLines()
+  /** All strings that get passed to printLines() */
   private emittedText: string[] = [];
 
-  // Line before the one we are processing
+  /** Line before the one we are processing */
   private lastLine: string | null = null;
 
   public constructor(options?: ReflowOptions) {
@@ -92,12 +107,17 @@ export default class ReflowState {
     }
   }
 
-  // Return true if word ends with a sentence-period, false otherwise.
-  //
-  // Allows for contraction cases which won't end a line:
-  //
-  //  - A single letter (if breakInitial is true)
-  //  - Abbreviations: 'c.f.', 'e.g.', 'i.e.' (or mixed-case versions)
+  /**
+   * Return true if word ends with a sentence-period, false otherwise.
+   *
+   * Allows for contraction cases which won't end a line:
+   *
+   * - A single letter (if breakInitial is true)
+   * - Abbreviations: 'c.f.', 'e.g.', 'i.e.' (or mixed-case versions)
+   *
+   * @param word a word
+   * @returns true if this word ends the sentence.
+   */
   private endSentence(word: string) {
     return !(
       word.slice(-1) !== "." ||
@@ -116,15 +136,16 @@ export default class ReflowState {
     return line.slice(0, 2) === "--";
   }
 
-  // Reflow the current paragraph, respecting the paragraph lead and
-  // hanging indentation levels.
-
-  // The algorithm also respects trailing '+' signs that indicate embedded newlines,
-  // and will not reflow a very long word immediately after a bullet point.
-
-  // Just return the paragraph unchanged if the -noflow argument was
-  // given.
-  private reflowPara() {
+  /**
+   * Reflow the current paragraph (if reflowing was not disabled),
+   * respecting the paragraph lead and hanging indentation levels.
+   *
+   * The algorithm also respects trailing '+' signs that indicate embedded newlines,
+   * and will not reflow a very long word immediately after a bullet point.
+   *
+   * @returns array of possibly-reflowed lines with trailing newlines.
+   */
+  private reflowPara(): string[] {
     if (!this.reflow) {
       return this.para;
     }
@@ -269,9 +290,11 @@ export default class ReflowState {
     return outPara;
   }
 
-  // Emit a paragraph, possibly reflowing it depending on the block context.
-  //
-  // Resets the paragraph accumulator.
+  /**
+   * Emit a paragraph, possibly reflowing it depending on the block context.
+   *
+   * Resets the paragraph accumulator.
+   */
   private emitPara() {
     if (this.para.length > 0) {
       const nextvu = this.nextvu;
@@ -349,7 +372,7 @@ export default class ReflowState {
     this.lineNumber += 1;
   }
 
-  // Print an array of lines with newlines already present
+  /** Print an array of lines with newlines already present */
   private printLines(lines: string[]) {
     /// TODO
     lines.forEach((line) => {
@@ -362,8 +385,11 @@ export default class ReflowState {
     });
   }
 
-  // 'line' ends a paragraph and should itthis be emitted.
-  // line may be null to indicate EOF or other exception.
+  /**
+   * 'line' ends a paragraph and the state should be emitted.
+   *
+   * @param line line of text including trailing line ending, or null to indicate EOF or other exception.
+   */
   private endPara(line: string | null) {
     log.debug("endPara line " + this.lineNumber + ": emitting paragraph");
 
@@ -375,14 +401,26 @@ export default class ReflowState {
     }
   }
 
-  // 'line' ends a paragraph (unless there's already a paragraph being
-  // accumulated, e.g. len(para) > 0 - currently not implemented)
+  /**
+   * 'line' ends a paragraph (unless there's already a paragraph being
+   * accumulated, e.g. len(para) > 0 - currently not implemented)
+   *
+   * @param line line of text including trailing line ending.
+   */
   private endParaContinue(line: string) {
     this.endPara(line);
   }
 
-  // 'line' begins or ends a block.
-  private endBlock(line: string, reflow = false, vuBlock = false) {
+  /** */
+
+  /**
+   * 'line' begins or ends a block.
+   *
+   * @param line line of text including trailing line ending.
+   * @param reflow whether the block should be reflowed
+   * @param vuBlock whether or not this is a valid usage block
+   */
+  private endBlock(line: string, reflow = false, vuBlock = false): void {
     // def endBlock(this, line, reflow = false, vuBlock = false):
 
     // If beginning a block, tag whether or not to reflow the contents.
@@ -424,30 +462,42 @@ export default class ReflowState {
       );
     }
   }
-  // 'line' begins or ends a block. The paragraphs in the block *should* be
-  // reformatted (e.g. a NOTE).
+
+  /**
+   * 'line' begins or ends a block. The paragraphs in the block *should* be reformatted (e.g. a NOTE).
+   *
+   * @param line line including trailing line ending.
+   * @param vuBlock whether or not this is a valid usage block
+   */
   private endParaBlockReflow(line: string, vuBlock: boolean) {
     // def endParaBlockReflow(this, line, vuBlock):
     this.endBlock(line, true, vuBlock);
   }
 
-  // 'line' begins or ends a block. The paragraphs in the block should
-  // *not* be reformatted (e.g. a code listing).
+  /**
+   * 'line' begins or ends a block. The paragraphs in the block should *not* be reformatted (e.g. a code listing).
+   *
+   * @param line line including trailing line ending.
+   */
   private endParaBlockPassthrough(line: string) {
     this.endBlock(line, false);
   }
 
-  // 'line' starts or continues a paragraph.
-  //
-  // Paragraphs may have "hanging indent", e.g.
-  //
-  // ```
-  //   * Bullet point...
-  //     ... continued
-  // ```
-  //
-  // In this case, when the higher indentation level ends, so does the
-  // paragraph.
+  /**
+   * 'line' starts or continues a paragraph.
+   *
+   * @param line line including trailing line ending.
+   *
+   * Paragraphs may have "hanging indent", e.g.
+   *
+   * ```
+   *   * Bullet point...
+   *     ... continued
+   * ```
+   *
+   * In this case, when the higher indentation level ends, so does the
+   * paragraph.
+   */
   private addLine(line: string) {
     log.debug("addLine line " + this.lineNumber + ": " + line);
 
@@ -481,7 +531,13 @@ export default class ReflowState {
     }
   }
 
-  // Process a single line of input
+  /**
+   * Process a single line of input
+   *
+   * Line number will be automatically incremented.
+   *
+   * @param line line including trailing line ending.
+   */
   public processLine(line: string): void {
     this.processNumberedLine(line, this.lineNumber + 1);
   }
@@ -578,27 +634,36 @@ export default class ReflowState {
     this.lastLine = line;
   }
 
-  // Returns true if endInput() would essentially be a no-op.
+  /** Returns true if endInput() would essentially be a no-op. */
   public isBetweenParagraphs(): boolean {
     return (this.para === null || this.para.length === 0) && this.blockStack.length === 1 && this.vuStack.length === 1;
   }
 
   /**
-  * Process all lines of a file or segment
-  *
-  * Calls endInput for you()
-  *
-  * @deprecated Use processLinesAndEndInput() instead.
-  */
+   * Process all lines of a file or segment.
+   *
+   * Automatically increments line number.
+   *
+   * Calls endInput for you()
+   *
+   * @param lines array of lines, each with their own trailing line ending
+   *
+   * @deprecated Use processLinesAndEndInput() instead.
+   */
   public processLines(lines: string[]): void {
     this.processLinesAndEndInput(lines);
   }
 
   /**
-  * Process all lines of a file or segment
-  *
-  * Calls endInput for you()
-  */
+   * Process all lines of a file or segment
+   *
+   * Automatically increments line number.
+   *
+   *
+   * Calls endInput for you()
+   *
+   * @param lines array of lines, each with their own trailing line ending
+   */
   public processLinesAndEndInput(lines: string[]): void {
     for (const line of lines) {
       this.processLine(line);
@@ -607,7 +672,11 @@ export default class ReflowState {
     this.endInput();
   }
 
-  // Clean up after processing all lines of input.
+  /**
+   * Clean up after processing all lines of input.
+   *
+   * Ends any paragraphs in progress.
+   */
   public endInput(): void {
     // Cleanup at end of file
     this.endPara(null);
@@ -618,17 +687,28 @@ export default class ReflowState {
     }
   }
 
-  // Gets the output
+  //
+  /**
+   * Gets the output.
+   *
+   * @returns a string of all the formatted output
+   */
   public getEmittedText(): string {
     return this.emittedText.join("");
   }
 
-  // Gets the output lines.
+  /**
+   * Gets the output lines.
+   *
+   * @returns an array of all the formatted lines, with their trailing newline.
+   */
   public getEmittedLines(): string[] {
     return this.emittedText;
   }
 
-  // Clear emitted text so we can use this incrementally.
+  /**
+   * Clears the emitted lines so we can use this incrementally.
+   */
   public clearEmittedText(): void {
     this.emittedText = [];
   }
