@@ -21,7 +21,7 @@ export function stringToLines(input: string): string[] {
 
 export function reflowLines(lines: string[], options?: ReflowOptions | null | undefined): string {
   const state = new ReflowState(options === null ? undefined : options);
-  state.processLines(lines);
+  state.processLinesAndEndInput(lines);
   return state.getEmittedText();
 }
 
