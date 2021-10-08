@@ -15,9 +15,11 @@ module.exports = {
     extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/recommended',
+        "prettier"
     ],
     ignorePatterns: [
         "lib",
-        "**/*.d.ts"
+        "**/*.d.ts",
+        "**/.eslintrc.js"
     ]
 }
