@@ -14,12 +14,17 @@ const blockCommonReflow = "// Common Valid Usage\n";
 
 type BlockStackElement = string | null;
 
-// Returns whether oldname and newname match, up to an API suffix.
+/** Returns whether oldname and newname match, up to an API suffix. */
 function apiMatch(oldname: string, newname: string): boolean {
   const trailingUpper = /[A-Z]+$/;
   return oldname.replace(trailingUpper, "") === newname.replace(trailingUpper, "");
 }
 
+/**
+ * The state of a reflow operation.
+ *
+ * Can be used for incremental reflows, etc.
+ */
 export default class ReflowState {
   /**
    * The last element is a line with the asciidoc block delimiter that's currently in effect,
@@ -713,7 +718,7 @@ export default class ReflowState {
     this.emittedText = [];
   }
 
-  private get paraBeginsWithBullet() {
+  private get paraBeginsWithBullet(): boolean {
     if (REGEXES.beginBullet.test(this.para[0])) {
       return true;
     }
@@ -721,6 +726,12 @@ export default class ReflowState {
   }
 }
 
+/**
+ * Identifies if the words in this line have an escaped newline at the end
+ *
+ * @param lineWords An array of words (whitespace-delimited tokens)
+ * @returns "+" if the last word in the line is + indicating an escaped newline, null otherwise.
+ */
 function getEndEscape(lineWords: string[]): "+" | null {
   if (lineWords.length > 0) {
     const lastWord = lineWords[lineWords.length - 1];
@@ -730,17 +741,36 @@ function getEndEscape(lineWords: string[]): "+" | null {
   }
   return null;
 }
+
+/**
+ * Trim a raw line and split into words on whitespace
+ *
+ * @param rawLine Line of text including trailing line endings
+ * @returns the input split on spaces and tabs,
+ * or an empty array if the input was empty after leading/trailing whitespace was trimmed.
+ */
 function trimAndSplitLine(rawLine: string) {
   const line = rawLine.trim();
   return line.length > 0 ? line.split(/[ \t]/) : [];
 }
 
+/**
+ * Tracks adding words to a line, with possible indentation,
+ * to know when to insert a line break.
+ */
 class OutLineBuffer {
   private outLineWords: string[] = [];
   private _indent = 0;
+
+  /**
+   * Spaces of indentation.
+   */
   public get indent() {
     return this._indent;
   }
+  /**
+   * Set the spaces of indentation
+   */
   public set indent(theIndent: number) {
     if (theIndent < 0) {
       throw new Error("Negative indent not allowed");
@@ -748,34 +778,57 @@ class OutLineBuffer {
     this._indent = theIndent;
   }
 
-  public get length() {
-    return (
-      this.indent +
-      // all word lengths combined
-      this.outLineWords
-        .map((s) => {
-          return s.length;
-        })
-        .reduce((sum, len) => {
-          return sum + len;
-        }, 0) +
-      // spaces between words
-      Math.max(0, this.outLineWords.length - 1)
-    );
+  /**
+   * Characters length, including indentation, all words, and spaces between words.
+   *
+   * Does not include any trailing whitespace/line endings.
+   */
+  public get length(): number {
+    // all word lengths combined
+    const wordCharacters = this.outLineWords
+      .map((s) => {
+        return s.length;
+      })
+      .reduce((sum, len) => {
+        return sum + len;
+      }, 0);
+    // spaces between words
+    const spaces = Math.max(0, this.outLineWords.length - 1);
+    return this.indent + wordCharacters + spaces;
   }
 
-  public get line() {
+  /**
+   * The line as buffered so far, with leading spaces for indent (if required),
+   * and all words separated by a single space.
+   *
+   * No trailing line endings.
+   */
+  public get line(): string {
     log.debug(`Returning line indented by ${this.indent}`);
     const indent = this.indent > 0 ? " ".repeat(this.indent) : "";
     return indent + this.outLineWords.join(" ");
   }
-  public isEmpty() {
+
+  /**
+   * @returns true if there are no words in the buffer
+   */
+  public isEmpty(): boolean {
     return this.outLineWords.length === 0;
   }
-  public push(word: string) {
+
+  /**
+   * Add a word to the buffer.
+   *
+   * @param word A word to output.
+   */
+  public push(word: string): void {
     this.outLineWords.push(word);
   }
-  public reset() {
+
+  /**
+   * Reset the buffer, removing all words and setting indent back to 0.
+   */
+  public reset(): void {
     this.outLineWords = [];
     this.indent = 0;
   }
