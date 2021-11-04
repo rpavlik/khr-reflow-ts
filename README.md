@@ -7,12 +7,18 @@ SPDX-License-Identifier: CC-BY-4.0
 
 Port of the Khronos `reflow.py` to TypeScript, to be able to make things like VS Code extensions, etc.
 
-Specifically, a port of: https://github.com/KhronosGroup/OpenXR-Docs/blob/master/specification/scripts/reflow.py
+Specifically, a port of: <https://github.com/KhronosGroup/OpenXR-Docs/blob/master/specification/scripts/reflow.py>
 
 ## Development
 
-Using yarn, so in a clone, run:
+In a clone, run:
 
 ```sh
-yarn
+npm i
+```
+
+Using jest for tests, the following will get you started:
+
+```sh
+npm run test
 ```
