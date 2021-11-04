@@ -1,0 +1,3 @@
+* pname:modeCountOutput is a pointer to the count of the array, or a pointer
+  to the required capacity in the case that pname:modeCapacityInput is
+  insufficient.

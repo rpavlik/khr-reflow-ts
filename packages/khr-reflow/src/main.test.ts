@@ -100,3 +100,19 @@ describe("box with hanging indent", () => {
     expect(reflowLines(data.inputData(2), null)).toEqual(data.expected);
   });
 });
+
+describe("edge case 1 with hanging indent", () => {
+  // we got this wrong compared with the Python: failed to join lines
+  const data = new TestData("edge-case-1");
+  test("can be formatted correctly and match the Python results", () => {
+    expect(reflowLines(data.inputData(), null)).toEqual(data.expected);
+  });
+});
+
+describe("edge case 2 with hanging indent", () => {
+  // we got this wrong compared with the Python: failed to break lines
+  const data = new TestData("edge-case-2");
+  test("can be formatted correctly and match the Python results", () => {
+    expect(reflowLines(data.inputData(), null)).toEqual(data.expected);
+  });
+});

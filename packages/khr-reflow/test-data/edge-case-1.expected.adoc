@@ -1,0 +1,3 @@
+* pname:vertexCountOutput is filled in by the runtime with the count of
+  vertices written or the required capacity in the case that
+  pname:vertexCapacityInput or pname:indexCapacityInput is insufficient.
