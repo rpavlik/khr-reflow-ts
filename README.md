@@ -11,11 +11,8 @@ Specifically, a port of: https://github.com/KhronosGroup/OpenXR-Docs/blob/master
 
 ## Development
 
-Using yarn and lerna, so in a clone, run:
+Using yarn, so in a clone, run:
 
 ```sh
 yarn
-yarn lerna boostrap
 ```
-
-- see <https://www.christopherbiscardi.com/post/multi-package-repos-with-lerna>
