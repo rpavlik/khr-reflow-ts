@@ -7,6 +7,8 @@ import fs from "fs";
 import path from "path";
 import { reflowLines, stringToLines } from "./main";
 
+import { expect, test } from "@jest/globals";
+
 function readExpectedFile(name: string): string {
   const fn = path.join(__dirname, "../test-data", `${name}.expected.adoc`);
   return fs.readFileSync(fn, { encoding: "utf-8" });
