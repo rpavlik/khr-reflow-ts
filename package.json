@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "line-by-line": "^0.1.6",
-    "tslog": "^3.3.4"
+    "tslog": "^4.8.2"
   },
   "devDependencies": {
     "@types/jest": "^29.4.0",

@@ -7,7 +7,7 @@ import { Logger } from "tslog";
 import ReflowOptions from "./ReflowOptions";
 import REFLOW_REGEXES from "./Regexes";
 
-const log: Logger = new Logger({ name: "ReflowState" });
+const log = new Logger({ name: "ReflowState" });
 
 // Fake block delimiters for "common" VU statements
 const blockCommonReflow = "// Common Valid Usage\n";
