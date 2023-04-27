@@ -258,9 +258,10 @@ export default class ReflowState {
           // Add a word to the current line
           if (actions.addWord) {
             if (outLineBuf.isEmpty()) {
-              throw new Error("unhandled case in original code");
+              actions.startLine = true;
+            } else {
+              outLineBuf.push(word);
             }
-            outLineBuf.push(word);
           }
 
           // Add current line to the output paragraph. Force
