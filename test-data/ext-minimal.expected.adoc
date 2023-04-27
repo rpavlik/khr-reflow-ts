@@ -1,0 +1,51 @@
+// Copyright (c) 2017-2023, The Khronos Group Inc.
+//
+// SPDX-License-Identifier: CC-BY-4.0
+
+include::{generated}/meta/XR_KHR_android_create_instance.adoc[]
+
+*Last Modified Date*::
+    2019-07-17
+*IP Status*::
+    No known IP claims.
+*Contributors*::
+    Robert Menzel, NVIDIA +
+    Martin Renschler, Qualcomm +
+    Krzysztof Kosiński, Google
+
+*Overview*
+
+When the application creates an slink:XrInstance object on Android systems,
+additional information from the application has to be provided to the XR
+runtime.
+
+The Android XR runtime must: return error ename:XR_ERROR_VALIDATION_FAILURE
+if the additional information is not provided by the application or if the
+additional parameters are invalid.
+
+*New Object Types*
+
+*New Flag Types*
+
+*New Enum Constants*
+
+elink:XrStructureType enumeration is extended with:
+
+* ename:XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR
+
+*New Enums*
+
+*New Structures*
+
+*New Functions*
+
+*Issues*
+
+*Version History*
+
+* Revision 1, 2017-05-26 (Robert Menzel)
+** Initial draft
+* Revision 2, 2019-01-24 (Martin Renschler)
+** Added error code, reformatted
+* Revision 3, 2019-07-17 (Krzysztof Kosiński)
+** Non-substantive clarifications.

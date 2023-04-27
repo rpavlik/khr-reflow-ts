@@ -118,3 +118,19 @@ describe("edge case 2 with hanging indent", () => {
     expect(reflowLines(data.inputData(), null)).toEqual(data.expected);
   });
 });
+
+describe("minimal extension", () => {
+  // sometimes we fail to reformat these for an unknown reason
+  const data = new TestData("ext-minimal");
+  test("can be formatted correctly and match the Python results", () => {
+    expect(reflowLines(data.inputData(), null)).toEqual(data.expected);
+  });
+});
+
+describe("extension", () => {
+  // sometimes we fail to reformat these for an unknown reason
+  const data = new TestData("ext");
+  test("can be formatted correctly and match the Python results", () => {
+    expect(reflowLines(data.inputData(), null)).toEqual(data.expected);
+  });
+});
