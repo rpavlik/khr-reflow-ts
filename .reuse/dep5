@@ -1,9 +1,19 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: khr-reflow
-Upstream-Contact: Ryan Pavlik <ryan.pavlik@collabora.com>
+Upstream-Contact: Rylie Pavlik <rylie.pavlik@collabora.com>
 Source: https://github.com/rpavlik/khr-reflow-ts
 
-Files: packages/khr-reflow/test-data/*
+Files: test-data/edge-case-1.expected.adoc
+  test-data/edge-case-1.input.adoc
+  test-data/edge-case-2.expected.adoc
+  test-data/edge-case-2.input.adoc
+  test-data/hanging-indent.expected.adoc
+  test-data/hanging-indent.input.1.adoc
+  test-data/hanging-indent.input.2.adoc
+  test-data/preserve-hanging-indent.expected.adoc
+  test-data/preserve-hanging-indent.input.adoc
+  test-data/preserve-unusual-hanging-indent.expected.adoc
+  test-data/preserve-unusual-hanging-indent.input.adoc
 Copyright: 2016-2021, The Khronos Group Inc.
 License: CC-BY-4.0
 Comment: Extracted from/based on the OpenXR specification.
