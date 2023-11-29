@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2021-2023, Collabora, Ltd.
+# SPDX-License-Identifier: CC0-1.0
+
+
+lerna-debug.log
+*.tgz
+
+*.adoc
+test-data/*
+
+.*
+!.gitignore
+!.reuse
+!.eslintrc.js
+!.prettierrc
+!.editorconfig
+!.npmignore
