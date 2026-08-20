@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 Port of the Khronos `reflow.py` to TypeScript, to be able to make things like VS Code extensions, etc.
 
-Specifically, a port of: <https://github.com/KhronosGroup/OpenXR-Docs/blob/master/specification/scripts/reflow.py>
+Specifically, a port of: <https://github.com/KhronosGroup/OpenXR-Docs/blob/main/specification/scripts/reflow.py>
 
 ## Development
 
