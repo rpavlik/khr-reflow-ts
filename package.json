@@ -1,6 +1,6 @@
 {
   "name": "@rpavlik/khr-reflow",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Reflow AsciiDoctor sources according to Khronos spec conventions.",
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
