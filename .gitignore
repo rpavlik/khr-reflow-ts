@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: 2021-2023, Collabora, Ltd.
+# SPDX-FileCopyrightText: 2021-2026, Collabora, Ltd.
 # SPDX-License-Identifier: CC0-1.0
 
+coverage/
 node_modules/
 lib/
 
